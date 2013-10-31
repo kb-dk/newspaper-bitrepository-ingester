@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>newspaper-bitrepository-ingester</groupId>
+  <artifactId>newspaper-bitrepository-ingester</artifactId>
+  <version>0.1-SNAPSHOT</version>
+
+  <parent>
+    <groupId>dk.statsbiblioteket.newspaper</groupId>
+    <artifactId>newspaper-parent</artifactId>
+    <version>0.2</version>
+  </parent>
+
+  <scm>
+    <url>https://github.com/statsbiblioteket/newspaper-bitrepository-ingester</url>
+    <connection>scm:git:https://github.com/statsbiblioteket/newspaper-bitrepository-ingester.git</connection>
+    <developerConnection>scm:git:git@github.com:statsbiblioteket/newspaper-bitrepository-ingester.git
+    </developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
+  <repositories>
+    <repository>
+      <id>sbforge-nexus</id>
+      <url>https://sbforge.org/nexus/content/groups/public</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>dk.statsbiblioteket.newspaper</groupId>
+      <artifactId>autonomous-component</artifactId>
+      <version>0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>dk.statsbiblioteket.newspaper</groupId>
+      <artifactId>tree-processor</artifactId>
+      <version>0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.9.5</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>dk.statsbiblioteket.newspaper.BatchStructureCheckerExecutable</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <integration.test.newspaper.testdata>
+              ${integration.test.newspaper.testdata}
+            </integration.test.newspaper.testdata>
+          </systemPropertyVariables>
+          <forkCount>0</forkCount>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>
