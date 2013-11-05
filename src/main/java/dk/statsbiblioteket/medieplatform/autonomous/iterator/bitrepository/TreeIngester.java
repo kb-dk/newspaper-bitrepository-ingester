@@ -7,9 +7,6 @@ import javax.jms.JMSException;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.client.eventhandler.OperationEvent;
-import org.bitrepository.common.settings.Settings;
-import org.bitrepository.common.settings.SettingsProvider;
-import org.bitrepository.common.settings.XMLFileSettingsLoader;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.bitrepository.protocol.messagebus.MessageBus;
 import org.bitrepository.protocol.messagebus.MessageBusManager;
@@ -26,26 +23,21 @@ import org.slf4j.LoggerFactory;
 public class TreeIngester {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
-    private final Settings settings;
     private final ResultCollector resultCollector;
     private final IngestableFileLocator fileLocator;
-    private final IngesterConfiguration configuration;
+    private final String collectionID;
     private final OperationEventHandler handler;
     private final ParallelOperationLimiter parallelOperationLimiter;
     private final PutFileClient putFileClient;
 
     public TreeIngester(
-            IngesterConfiguration configuration,
+            String collectionID,
             IngestableFileLocator fileLocator,
             PutFileClient putFileClient,
             ResultCollector resultCollector) {
-        SettingsProvider settingsLoader = new SettingsProvider(
-                new XMLFileSettingsLoader(configuration.getSettingsDir()),
-                configuration.getComponentID());
-        settings = settingsLoader.getSettings();
+        this.collectionID = collectionID;
         this.resultCollector = resultCollector;
         this.fileLocator = fileLocator;
-        this.configuration = configuration;
         parallelOperationLimiter = new ParallelOperationLimiter(10);
         handler = new OperationEventHandler(parallelOperationLimiter);
         this.putFileClient = putFileClient;
@@ -72,7 +64,7 @@ public class TreeIngester {
      */
     private void putFile(IngestableFile ingestableFile) {
         parallelOperationLimiter.addJob(ingestableFile.getFileID());
-        putFileClient.putFile(configuration.getCollectionID(),
+        putFileClient.putFile(collectionID,
                 ingestableFile.getUrl(), ingestableFile.getFileID(), 0,
                 ingestableFile.getChecksum(), null, handler, "Initial ingest of file");
     }

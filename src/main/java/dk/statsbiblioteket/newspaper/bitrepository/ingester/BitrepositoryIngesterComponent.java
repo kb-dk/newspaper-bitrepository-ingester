@@ -63,8 +63,12 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)));
         Settings settings = loadSettings(configuration);
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        TreeIngester ingester = new TreeIngester(configuration, new BatchImageLocator(createIterator(batch),
-                getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)), ingestClient, resultCollector);
+        TreeIngester ingester = new TreeIngester(
+                configuration.getCollectionID(),
+                new BatchImageLocator(createIterator(batch),
+                getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
+                ingestClient,
+                resultCollector);
         ingester.performIngest();
         ingester.shutdown();
     }
