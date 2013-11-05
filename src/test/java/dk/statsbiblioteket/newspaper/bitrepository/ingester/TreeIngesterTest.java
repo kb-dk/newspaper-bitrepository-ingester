@@ -23,7 +23,7 @@ public class TreeIngesterTest {
         putFileClient = new PutFileClientStub();
         resultCollector = mock(ResultCollector.class);
         treeIngester = new TreeIngester(
-                "testCollection", fileLocator, putFileClient, resultCollector);
+                TEST_COLLECTION_ID, fileLocator, putFileClient, resultCollector);
     }
 
     @Test

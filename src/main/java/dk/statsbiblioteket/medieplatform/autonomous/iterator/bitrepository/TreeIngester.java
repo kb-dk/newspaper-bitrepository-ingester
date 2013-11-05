@@ -16,12 +16,12 @@ import org.slf4j.LoggerFactory;
 /**
  * Class handling ingest of a set of files in a tree iterator structure. The
  * - Loading of settings from configuration directory
- * - Validation of FileID
  * - Connection to the Bitrepository
  * - Calls to the Bitrepository reference client and handling of events.
  */
 public class TreeIngester {
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final long DEFAULT_FILE_SIZE = 0;
 
     private final ResultCollector resultCollector;
     private final IngestableFileLocator fileLocator;
@@ -65,12 +65,12 @@ public class TreeIngester {
     private void putFile(IngestableFile ingestableFile) {
         parallelOperationLimiter.addJob(ingestableFile.getFileID());
         putFileClient.putFile(collectionID,
-                ingestableFile.getUrl(), ingestableFile.getFileID(), 0,
+                ingestableFile.getUrl(), ingestableFile.getFileID(), DEFAULT_FILE_SIZE,
                 ingestableFile.getChecksum(), null, handler, "Initial ingest of file");
     }
 
     /**
-     * Method to shutdown the client properly
+     * Method to shutdown the client properly.
      */
     public void shutdown() {
         try {

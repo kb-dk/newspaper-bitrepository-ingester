@@ -11,5 +11,5 @@ The ingester uses an injected TreeIterator to traverse a batch tree and add each
 system. The ingester acts as a bit repository put client.
 
 It is also the responsibility of the ingester to register the batch as 'force-online', thereby preventing the
-processing pillar from moving the files contained in a batch to tape. It is the responsibility of the QA process to
+offline pillar from moving the files contained in a batch to tape. It is the responsibility of the QA process to
  release the batch for offline storage, when the batch has been approved.

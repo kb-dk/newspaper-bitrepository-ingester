@@ -11,6 +11,11 @@ import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.bitrepository.protocol.OperationType;
 
+/**
+ * Used for stubbing a actual bitrepository, thereby avoiding all the complications associated with
+ * testing agaist a real backend. All calls to the put file client are store in the
+ * <code>runningOperations</code> list.
+ */
 public class PutFileClientStub implements PutFileClient {
     public List<ActivePutOperation> runningOperations = new ArrayList<ActivePutOperation>();
 
@@ -27,6 +32,9 @@ public class PutFileClientStub implements PutFileClient {
         eventHandler.handleEvent(completeEvent);
     }
 
+    /**
+     * Contains all the parameters used in a putFile call.
+     */
     public class ActivePutOperation {
         String collectionID;
         URL url;

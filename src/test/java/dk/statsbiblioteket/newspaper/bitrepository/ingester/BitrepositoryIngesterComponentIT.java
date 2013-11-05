@@ -49,7 +49,7 @@ public class BitrepositoryIngesterComponentIT {
         BitrepositoryIngesterComponent bitrepositoryIngesterComponent =
                 new StubbedBitrepositoryIngesterComponent(properties);
 
-        ResultCollector resultCollector = new ResultCollector("Bitrepository ingester", "v0.1");
+        ResultCollector resultCollector = new ResultCollector("Mocked bitrepository ingester", "test version");
         Batch batch = new Batch();
         batch.setBatchID(TEST_BATCH_ID);
         batch.setRoundTripNumber(1);
