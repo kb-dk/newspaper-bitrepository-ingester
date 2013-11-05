@@ -37,6 +37,16 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.bitrepository.reference</groupId>
+      <artifactId>bitrepository-core</artifactId>
+      <version>${bitrepository-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bitrepository.reference</groupId>
+      <artifactId>bitrepository-modifying-client</artifactId>
+      <version>${bitrepository-version}</version>
+    </dependency>
+    <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>autonomous-component</artifactId>
       <version>0.1</version>
@@ -98,4 +108,7 @@
 
     </plugins>
   </build>
+  <properties>
+    <bitrepository-version>1.0</bitrepository-version>
+  </properties>
 </project>
