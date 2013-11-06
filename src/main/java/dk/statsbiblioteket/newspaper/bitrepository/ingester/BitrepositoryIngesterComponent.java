@@ -36,16 +36,6 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     }
 
     @Override
-    public String getComponentName() {
-        return getClass().getSimpleName();
-    }
-
-    @Override
-    public String getComponentVersion() {
-        return "0.1";
-    }
-
-    @Override
     public String getEventID() {
         return "Batch ingested";
     }
@@ -63,12 +53,19 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)));
         Settings settings = loadSettings(configuration);
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        TreeIngester ingester = new TreeIngester(configuration, new BatchImageLocator(createIterator(batch),
-                getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)), ingestClient, resultCollector);
+        TreeIngester ingester = new TreeIngester(
+                configuration.getCollectionID(),
+                new BatchImageLocator(createIterator(batch),
+                getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
+                ingestClient,
+                resultCollector, configuration.getMaxNumberOfParallelPuts());
         ingester.performIngest();
         ingester.shutdown();
     }
 
+    /**
+     * Creates a default put file client. May be overridden by specialized BitrepositoryIngesterComponents.
+     */
     protected PutFileClient createPutFileClient(IngesterConfiguration configuration, Settings settings) {
         PermissionStore permissionStore = new PermissionStore();
         MessageAuthenticator authenticator = new BasicMessageAuthenticator(permissionStore);
@@ -83,6 +80,9 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(COMPONENTID_PROPERTY));
     }
 
+    /**
+     * Load settings from disk. May be overridden by specialized custom functionality.
+     */
     protected Settings loadSettings(IngesterConfiguration configuration) {
         SettingsProvider settingsLoader = new SettingsProvider(
                 new XMLFileSettingsLoader(configuration.getSettingsDir()),

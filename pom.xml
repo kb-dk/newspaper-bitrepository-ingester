@@ -11,7 +11,7 @@
   <parent>
     <groupId>dk.statsbiblioteket.newspaper</groupId>
     <artifactId>newspaper-parent</artifactId>
-    <version>0.2</version>
+    <version>0.3-SNAPSHOT</version>
   </parent>
 
   <scm>
@@ -49,12 +49,17 @@
     <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>autonomous-component</artifactId>
-      <version>0.1</version>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>tree-processor</artifactId>
-      <version>0.1</version>
+      <version>0.2-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>dk.statsbiblioteket.newspaper</groupId>
+      <artifactId>runnable-compoment</artifactId>
+      <version>0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>dk.statsbiblioteket.doms.central</groupId>

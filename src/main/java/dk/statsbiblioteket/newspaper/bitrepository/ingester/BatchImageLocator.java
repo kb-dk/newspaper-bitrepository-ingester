@@ -16,7 +16,7 @@ import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.common.utils.CalendarUtils;
 
 /**
- * Concrete implementation of <code>IngestableFileLocator</code> defining how to find the jp2 files to store for
+ * Concrete implementation of <code>AbstractImageLocator</code> defining how to find the jp2 files to store for
  * a newspaper batch.
  */
 public class BatchImageLocator extends AbstractImageLocator {
@@ -35,20 +35,24 @@ public class BatchImageLocator extends AbstractImageLocator {
     protected IngestableFile createIngestableFile(FileAttributeParsingEvent fileEvent) {
         try {
             return new IngestableFile(
-                    getFileID(fileEvent), getFileUrl(fileEvent), getChecksum(fileEvent.getChecksum()), null
-            );
+                    getFileID(fileEvent), getFileUrl(fileEvent), getChecksum(fileEvent.getChecksum()), null);
         } catch (IOException e) {
             throw new RuntimeException();
         }
     }
 
-    @Override
-    protected String getFileID(FileAttributeParsingEvent event) {
+    /**
+     * Creates a fileID by supstitution the '/' path separators in the filename with '_'.
+     */
+    private String getFileID(FileAttributeParsingEvent event) {
         return getFileName(event).replace('/', '_');
     }
 
-    @Override
-    protected URL getFileUrl(FileAttributeParsingEvent event) {
+    /**
+     * Creates a url by prefixing the filename from the event with the <code>batchDirUrl</code> defined in
+     * the properties.
+     */
+    private URL getFileUrl(FileAttributeParsingEvent event) {
         try {
             return new URL(batchDirUrl + "/" + getFileName(event));
         } catch (MalformedURLException e) {

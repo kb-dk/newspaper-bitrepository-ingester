@@ -7,9 +7,6 @@ import javax.jms.JMSException;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.client.eventhandler.OperationEvent;
-import org.bitrepository.common.settings.Settings;
-import org.bitrepository.common.settings.SettingsProvider;
-import org.bitrepository.common.settings.XMLFileSettingsLoader;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.bitrepository.protocol.messagebus.MessageBus;
 import org.bitrepository.protocol.messagebus.MessageBusManager;
@@ -17,54 +14,49 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class handling ingest of a set of files in a tree iterator structure. The
- * - Loading of settings from configuration directory
- * - Validation of FileID
- * - Connection to the Bitrepository
- * - Calls to the Bitrepository reference client and handling of events.
+ * Class handling ingest of a set of files in a tree iterator structure.
  */
 public class TreeIngester {
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private static final long DEFAULT_FILE_SIZE = 0;
 
-    private final Settings settings;
     private final ResultCollector resultCollector;
     private final IngestableFileLocator fileLocator;
-    private final IngesterConfiguration configuration;
+    private final String collectionID;
     private final OperationEventHandler handler;
     private final ParallelOperationLimiter parallelOperationLimiter;
     private final PutFileClient putFileClient;
 
     public TreeIngester(
-            IngesterConfiguration configuration,
+            String collectionID,
             IngestableFileLocator fileLocator,
             PutFileClient putFileClient,
-            ResultCollector resultCollector) {
-        SettingsProvider settingsLoader = new SettingsProvider(
-                new XMLFileSettingsLoader(configuration.getSettingsDir()),
-                configuration.getComponentID());
-        settings = settingsLoader.getSettings();
+            ResultCollector resultCollector,
+            int maxNumberOfParallelPuts) {
+        this.collectionID = collectionID;
         this.resultCollector = resultCollector;
         this.fileLocator = fileLocator;
-        this.configuration = configuration;
-        parallelOperationLimiter = new ParallelOperationLimiter(10);
+        parallelOperationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
         handler = new OperationEventHandler(parallelOperationLimiter);
         this.putFileClient = putFileClient;
     }
 
     public void performIngest() {
-        IngestableFile file = fileLocator.nextFile();
-        while (file != null) {
-            try {
-                putFile(file);
-            } catch (Exception e) {
-                log.error("Failed to ingest file.", e);
-            }
+        IngestableFile file = null;
+        do {
             try {
                 file = fileLocator.nextFile();
+                try {
+                    if (file != null) {
+                        putFile(file);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to ingest file.", e);
+                }
             } catch (Exception e) {
                 log.error("Failed to find file to ingest.", e);
             }
-        }
+        }  while (file != null);
     }
 
     /**
@@ -72,13 +64,13 @@ public class TreeIngester {
      */
     private void putFile(IngestableFile ingestableFile) {
         parallelOperationLimiter.addJob(ingestableFile.getFileID());
-        putFileClient.putFile(configuration.getCollectionID(),
-                ingestableFile.getUrl(), ingestableFile.getFileID(), 0,
-                ingestableFile.getChecksum(), null, handler, "Initial ingest of file");
+        putFileClient.putFile(collectionID,
+                ingestableFile.getUrl(), ingestableFile.getFileID(), DEFAULT_FILE_SIZE,
+                ingestableFile.getChecksum(), null, handler, null);
     }
 
     /**
-     * Method to shutdown the client properly
+     * Method to shutdown the client properly.
      */
     public void shutdown() {
         try {
@@ -118,12 +110,12 @@ public class TreeIngester {
         private final BlockingQueue<String> activeOperations;
 
         ParallelOperationLimiter(int limit) {
-            activeOperations = new LinkedBlockingQueue<String>(limit);
+            activeOperations = new LinkedBlockingQueue<>(limit);
         }
 
         /**
          * Will block until the if the activeOperations queue limit is exceeded and unblock when a job is remove.
-         * @param fileID
+         * @param fileID Used as ID for the job in the queue.
          */
         void addJob(String fileID) {
             try {
