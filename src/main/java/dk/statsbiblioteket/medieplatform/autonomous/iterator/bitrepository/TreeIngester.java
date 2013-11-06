@@ -64,7 +64,7 @@ public class TreeIngester {
         parallelOperationLimiter.addJob(ingestableFile.getFileID());
         putFileClient.putFile(collectionID,
                 ingestableFile.getUrl(), ingestableFile.getFileID(), DEFAULT_FILE_SIZE,
-                ingestableFile.getChecksum(), null, handler, "Initial ingest of file");
+                ingestableFile.getChecksum(), null, handler, null);
     }
 
     /**

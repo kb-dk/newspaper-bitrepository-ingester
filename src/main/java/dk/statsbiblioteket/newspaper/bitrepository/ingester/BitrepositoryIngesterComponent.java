@@ -58,7 +58,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 new BatchImageLocator(createIterator(batch),
                 getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
                 ingestClient,
-                resultCollector);
+                resultCollector, configuration.getMaxNumberOfParallelPuts());
         ingester.performIngest();
         ingester.shutdown();
     }
