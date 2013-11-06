@@ -52,13 +52,13 @@ public class TreeIngesterTest {
         treeIngester = new TreeIngester(
                 TEST_COLLECTION_ID, fileLocator, putFileClient, resultCollector, maxNumberOfParallelPuts);
         IngestableFile firstFile =
-                new IngestableFile("First-file", new URL("http://somwhere.someplace/first-file"), checksum, 0L);
+                new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L);
         IngestableFile secondFile =
-                new IngestableFile("Second-file", new URL("http://somwhere.someplace/second-file"), checksum, 0L);
+                new IngestableFile("Second-file", new URL("http://somewhere.someplace/second-file"), checksum, 0L);
         IngestableFile thirdFile =
-                new IngestableFile("Third-file", new URL("http://somwhere.someplace/third-file"), checksum, 0L);
+                new IngestableFile("Third-file", new URL("http://somewhere.someplace/third-file"), checksum, 0L);
         IngestableFile fourthFile =
-                new IngestableFile("Fourth-file", new URL("http://somwhere.someplace/fourthFile-file"), checksum, 0L);
+                new IngestableFile("Fourth-file", new URL("http://somewhere.someplace/fourthFile-file"), checksum, 0L);
         when(fileLocator.nextFile()).thenReturn(firstFile).thenReturn(secondFile).thenReturn(thirdFile).thenReturn(fourthFile);
 
         //We need to run the ingest in a separate thread, as it will block.
@@ -68,6 +68,7 @@ public class TreeIngesterTest {
             }
         });
         t.start();
+        Thread.sleep(100);
 
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
         verify(putFileClient).putFile(
