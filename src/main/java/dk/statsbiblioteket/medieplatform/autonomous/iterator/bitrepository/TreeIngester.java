@@ -14,10 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class handling ingest of a set of files in a tree iterator structure. The
- * - Loading of settings from configuration directory
- * - Connection to the Bitrepository
- * - Calls to the Bitrepository reference client and handling of events.
+ * Class handling ingest of a set of files in a tree iterator structure.
  */
 public class TreeIngester {
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -34,29 +31,30 @@ public class TreeIngester {
             String collectionID,
             IngestableFileLocator fileLocator,
             PutFileClient putFileClient,
-            ResultCollector resultCollector) {
+            ResultCollector resultCollector,
+            int maxNumberOfParallelPuts) {
         this.collectionID = collectionID;
         this.resultCollector = resultCollector;
         this.fileLocator = fileLocator;
-        parallelOperationLimiter = new ParallelOperationLimiter(10);
+        parallelOperationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
         handler = new OperationEventHandler(parallelOperationLimiter);
         this.putFileClient = putFileClient;
     }
 
     public void performIngest() {
-        IngestableFile file = fileLocator.nextFile();
-        while (file != null) {
-            try {
-                putFile(file);
-            } catch (Exception e) {
-                log.error("Failed to ingest file.", e);
-            }
+        IngestableFile file = null;
+        do {
             try {
                 file = fileLocator.nextFile();
+                try {
+                    putFile(file);
+                } catch (Exception e) {
+                    log.error("Failed to ingest file.", e);
+                }
             } catch (Exception e) {
                 log.error("Failed to find file to ingest.", e);
             }
-        }
+        }  while (file != null);
     }
 
     /**
@@ -110,12 +108,12 @@ public class TreeIngester {
         private final BlockingQueue<String> activeOperations;
 
         ParallelOperationLimiter(int limit) {
-            activeOperations = new LinkedBlockingQueue<String>(limit);
+            activeOperations = new LinkedBlockingQueue<>(limit);
         }
 
         /**
          * Will block until the if the activeOperations queue limit is exceeded and unblock when a job is remove.
-         * @param fileID
+         * @param fileID Used as ID for the job in the queue.
          */
         void addJob(String fileID) {
             try {
