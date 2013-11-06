@@ -9,10 +9,12 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeI
 import org.bitrepository.bitrepositoryelements.ChecksumDataForFileTYPE;
 import org.bitrepository.bitrepositoryelements.ChecksumSpecTYPE;
 import org.bitrepository.bitrepositoryelements.ChecksumType;
+import org.bitrepository.client.eventhandler.CompleteEvent;
 import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.common.utils.CalendarUtils;
 import org.bitrepository.modify.putfile.PutFileClient;
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -43,15 +45,7 @@ public class TreeIngesterTest {
     }
 
     @Test
-    public void singleNodeTest() {
-        treeIngester = new TreeIngester(
-                TEST_COLLECTION_ID, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS);
-        //Todo
-        treeIngester.performIngest();
-    }
-
-    @Test
-    public void parallelPutTest() throws MalformedURLException {
+    public void parallelPutTest() throws MalformedURLException, InterruptedException {
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 2;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
@@ -75,13 +69,30 @@ public class TreeIngesterTest {
         });
         t.start();
 
+        ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
         verify(putFileClient).putFile(
                 eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
-                eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
+                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
         verify(putFileClient).putFile(
                 eq(TEST_COLLECTION_ID), eq(secondFile.getUrl()), eq(secondFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
+        verifyNoMoreInteractions(putFileClient);
 
+        CompleteEvent firstFileComplete = new CompleteEvent(TEST_COLLECTION_ID, null);
+        firstFileComplete.setFileID(firstFile.getFileID());
+        eventHandlerCaptor.getValue().handleEvent(firstFileComplete);
+        Thread.sleep(100);
+        verify(putFileClient).putFile(
+                eq(TEST_COLLECTION_ID), eq(thirdFile.getUrl()), eq(thirdFile.getFileID()), eq(0L),
+                eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
+
+        CompleteEvent secondFileComplete = new CompleteEvent(TEST_COLLECTION_ID, null);
+        secondFileComplete.setFileID(secondFile.getFileID());
+        eventHandlerCaptor.getValue().handleEvent(secondFileComplete);
+        Thread.sleep(100);
+        verify(putFileClient).putFile(
+                eq(TEST_COLLECTION_ID), eq(fourthFile.getUrl()), eq(fourthFile.getFileID()), eq(0L),
+                eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
     }
 
     private ChecksumDataForFileTYPE getChecksum(String checksum) {
