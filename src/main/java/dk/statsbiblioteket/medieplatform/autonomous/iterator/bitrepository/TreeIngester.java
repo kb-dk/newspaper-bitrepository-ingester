@@ -47,7 +47,9 @@ public class TreeIngester {
             try {
                 file = fileLocator.nextFile();
                 try {
-                    putFile(file);
+                    if (file != null) {
+                        putFile(file);
+                    }
                 } catch (Exception e) {
                     log.error("Failed to ingest file.", e);
                 }
