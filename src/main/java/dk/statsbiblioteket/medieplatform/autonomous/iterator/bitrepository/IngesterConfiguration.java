@@ -9,10 +9,11 @@ public class IngesterConfiguration {
     private final String domsUrl;
     private final String domsUser;
     private final String domsPass;
+    private final String bitmagBaseUrl;
 
     public IngesterConfiguration(String componentID, String collectionID, String settingsDir, 
             String certificateLocation, int maxNumberOfParallelPuts, String domsUrl, 
-            String domsUser, String domsPass) {
+            String domsUser, String domsPass, String bitmagBaseUrl) {
         this.componentID = componentID;
         this.collectionID = collectionID;
         SettingsDir = settingsDir;
@@ -21,6 +22,7 @@ public class IngesterConfiguration {
         this.domsUrl = domsUrl;
         this.domsUser = domsUser;
         this.domsPass = domsPass;
+        this.bitmagBaseUrl = bitmagBaseUrl;
     }
 
     public String getComponentID() {
@@ -53,6 +55,10 @@ public class IngesterConfiguration {
     
     public String getDomsPass() {
         return domsPass;
+    }
+    
+    public String getBitmagBaseUrl() {
+        return bitmagBaseUrl;
     }
     
 }

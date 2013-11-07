@@ -45,7 +45,7 @@ public class BatchImageLocator extends AbstractImageLocator {
      * Creates a fileID by supstitution the '/' path separators in the filename with '_'.
      */
     private String getFileID(FileAttributeParsingEvent event) {
-        return getFileName(event).replace('/', '_');
+        return NewspaperFileNameTranslater.getFileID(getFileName(event));
     }
 
     /**

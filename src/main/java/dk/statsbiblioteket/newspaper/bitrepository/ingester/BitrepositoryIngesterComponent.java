@@ -1,13 +1,9 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
-import java.net.MalformedURLException;
 import java.util.Properties;
-
-import javax.xml.bind.JAXBException;
 
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
-import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.AbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
@@ -42,6 +38,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     public static final String DOMS_CENTRAL_URL_PROPERTY = "fedora.server";
     public static final String DOMS_USER_PROPERTY = "fedora.admin.username";
     public static final String DOMS_PASS_PROPERTY = "fedora.admin.password";
+    public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
     
     public BitrepositoryIngesterComponent(Properties properties) {
         super(properties);
@@ -65,7 +62,8 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)),
                 getProperties().getProperty(DOMS_CENTRAL_URL_PROPERTY),
                 getProperties().getProperty(DOMS_USER_PROPERTY), 
-                getProperties().getProperty(DOMS_PASS_PROPERTY));
+                getProperties().getProperty(DOMS_PASS_PROPERTY), 
+                getProperties().getProperty(BITMAG_BASEURL_PROPERTY));
         Settings settings = loadSettings(configuration);
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         TreeIngester ingester = new TreeIngester(
