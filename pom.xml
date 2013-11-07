@@ -111,6 +111,9 @@
             <integration.test.newspaper.testdata>
               ${integration.test.newspaper.testdata}
             </integration.test.newspaper.testdata>
+            <bitrepository.ingester.config>
+              ${bitrepository.ingester.config}
+            </bitrepository.ingester.config>
           </systemPropertyVariables>
           <forkCount>0</forkCount>
         </configuration>

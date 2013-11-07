@@ -28,7 +28,7 @@ public class DomsJP2FileUrlRegister {
      * @param url The url to where the file content can be resolved. 
      * @param checksum The checksum of the data 
      */
-    public void registerJp2File(String path, String filename, String url, String checksum) {
+    public void registerJp2File(String path, String filename, String url) {
         try {
             List<String> objects = central.findObjectFromDCIdentifier(PATH_PREFIX + path);
             if(objects.size() > 1) {
@@ -36,7 +36,7 @@ public class DomsJP2FileUrlRegister {
                         + "don't know which to add file to.");
             }
             String fileObjectPid = objects.get(0);
-            central.addFileFromPermanentURL(fileObjectPid, filename, checksum, 
+            central.addFileFromPermanentURL(fileObjectPid, filename, null, 
                     url, JP2_FORMAT_URI, "Adding file after bitrepository ingest");
             
         } catch (InvalidCredentialsException | MethodFailedException | InvalidResourceException e) {
