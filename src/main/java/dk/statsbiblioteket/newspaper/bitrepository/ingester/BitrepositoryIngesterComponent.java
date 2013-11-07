@@ -49,7 +49,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(COMPONENTID_PROPERTY),
                 getProperties().getProperty(COLLECTIONID_PROPERTY),
                 getProperties().getProperty(SETTINGS_DIR_PROPERTY),
-                getProperties().getProperty(CERTIFICATE_PROPERTY),
+                getProperties().getProperty(SETTINGS_DIR_PROPERTY) + "/" + getProperties().getProperty(CERTIFICATE_PROPERTY),
                 Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)));
         Settings settings = loadSettings(configuration);
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
@@ -73,7 +73,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         OperationAuthorizor authorizer = new BasicOperationAuthorizor(permissionStore);
         org.bitrepository.protocol.security.SecurityManager securityManager =
                 new BasicSecurityManager(settings.getRepositorySettings(),
-                getProperties().getProperty(CERTIFICATE_PROPERTY),
+                configuration.getCertificateLocation(),
                 authenticator, signer, authorizer, permissionStore, getProperties().getProperty(COMPONENTID_PROPERTY));
         return ModifyComponentFactory.getInstance().retrievePutClient(
                 settings, securityManager,
