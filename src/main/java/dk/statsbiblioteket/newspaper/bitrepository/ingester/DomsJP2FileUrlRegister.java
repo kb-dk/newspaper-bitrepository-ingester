@@ -2,23 +2,23 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
 import java.util.List;
 
-import dk.statsbiblioteket.doms.central.CentralWebservice;
-import dk.statsbiblioteket.doms.central.InvalidCredentialsException;
-import dk.statsbiblioteket.doms.central.InvalidResourceException;
-import dk.statsbiblioteket.doms.central.MethodFailedException;
+import dk.statsbiblioteket.doms.central.connectors.BackendInvalidCredsException;
+import dk.statsbiblioteket.doms.central.connectors.BackendInvalidResourceException;
+import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
+import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 
 /**
  * Class to handle the registration of the bit repository URL for a given JP2000 file in DOMS.  
  */
 public class DomsJP2FileUrlRegister {
 
-    public static final String JP2_FORMAT_URI = "image/jp2";
+    public static final String JP2_MIMETYPE = "image/jp2";
     public static final String PATH_PREFIX = "path:";
     
-    private CentralWebservice central;
+    private EnhancedFedora enhancedFedora;
     
-    public DomsJP2FileUrlRegister(CentralWebservice central) {
-        this.central = central;
+    public DomsJP2FileUrlRegister(EnhancedFedora central) {
+        this.enhancedFedora = central;
     }
     
     /**
@@ -29,19 +29,21 @@ public class DomsJP2FileUrlRegister {
      * @param checksum The checksum of the data 
      */
     public void registerJp2File(String path, String filename, String url) {
+        List<String> objects;
         try {
-            List<String> objects = central.findObjectFromDCIdentifier(PATH_PREFIX + path);
-            if(objects.size() > 1) {
-                throw new RuntimeException("Got multiple identifiers from DOMS, "
-                        + "don't know which to add file to.");
+            objects = enhancedFedora.findObjectFromDCIdentifier(PATH_PREFIX + path);
+
+            if(objects.size() != 1) {
+                throw new RuntimeException("Expected excatly 1 identifier from DOMS, got " + objects.size()
+                        + ". Don't know where to add file.");
             }
             String fileObjectPid = objects.get(0);
-            central.addFileFromPermanentURL(fileObjectPid, filename, null, 
-                    url, JP2_FORMAT_URI, "Adding file after bitrepository ingest");
-            
-        } catch (InvalidCredentialsException | MethodFailedException | InvalidResourceException e) {
-            throw new RuntimeException(e.getMessage(), e);
+            enhancedFedora.addExternalDatastream(fileObjectPid, "contents", filename, url, null, 
+                    JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
+        } catch (BackendInvalidCredsException | BackendMethodFailedException | BackendInvalidResourceException e) {
+            throw new RuntimeException(e.getMessage(), e); 
         }
+        
     }
 
 }

@@ -1,12 +1,20 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
+import java.net.MalformedURLException;
 import java.util.Properties;
 
+import javax.xml.bind.JAXBException;
+
+import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
+import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
+import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
+import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.AbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
+
 import org.bitrepository.common.settings.Settings;
 import org.bitrepository.common.settings.SettingsProvider;
 import org.bitrepository.common.settings.XMLFileSettingsLoader;
@@ -31,6 +39,10 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     public static final String CERTIFICATE_PROPERTY="bitrepository.ingester.certificate";
     public static final String URL_TO_BATCH_DIR_PROPERTY="bitrepository.ingester.urltobatchdir";
     public static final String MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY="bitrepository.ingester.numberofparrallelPuts";
+    public static final String DOMS_CENTRAL_URL_PROPERTY = "fedora.server";
+    public static final String DOMS_USER_PROPERTY = "fedora.admin.username";
+    public static final String DOMS_PASS_PROPERTY = "fedora.admin.password";
+    
     public BitrepositoryIngesterComponent(Properties properties) {
         super(properties);
     }
@@ -50,7 +62,10 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(COLLECTIONID_PROPERTY),
                 getProperties().getProperty(SETTINGS_DIR_PROPERTY),
                 getProperties().getProperty(CERTIFICATE_PROPERTY),
-                Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)));
+                Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)),
+                getProperties().getProperty(DOMS_CENTRAL_URL_PROPERTY),
+                getProperties().getProperty(DOMS_USER_PROPERTY), 
+                getProperties().getProperty(DOMS_PASS_PROPERTY));
         Settings settings = loadSettings(configuration);
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         TreeIngester ingester = new TreeIngester(
@@ -63,6 +78,15 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         ingester.shutdown();
     }
 
+    protected EnhancedFedora createEnhancedFedora(IngesterConfiguration configuration) {
+        Credentials creds = new Credentials(configuration.getDomsUser(), configuration.getDomsPass());
+        try {
+            return new EnhancedFedoraImpl(creds, configuration.getDomsUrl(), null, null);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+    
     /**
      * Creates a default put file client. May be overridden by specialized BitrepositoryIngesterComponents.
      */
