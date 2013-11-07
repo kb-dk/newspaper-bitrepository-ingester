@@ -56,7 +56,7 @@ public class BatchImageLocator extends AbstractImageLocator {
         try {
             return new URL(batchDirUrl + "/" + getFileName(event));
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Unable to create ingest url based on string: " + batchDirUrl + event.getName());
+            throw new RuntimeException("Unable to create ingest url based on string: " + batchDirUrl + "/" + event.getName());
         }
     }
 
