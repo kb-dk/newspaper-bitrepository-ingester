@@ -20,7 +20,7 @@ public class BitrepositoryIngesterComponentIT {
         String pathToConfig = System.getProperty("bitrepository.ingester.config");
         String pathToTestBatch = System.getProperty("integration.test.newspaper.testdata");
         Properties properties = new Properties();
-        properties.load(new FileInputStream(pathToConfig + "/bitrepository-ingester.properties"));
+        properties.load(new FileInputStream(pathToConfig + "/config.properties"));
         properties.setProperty(BitrepositoryIngesterComponent.SETTINGS_DIR_PROPERTY, pathToConfig);
         properties.setProperty("scratch", pathToTestBatch + "/" + "small-test-batch");
 
@@ -42,7 +42,7 @@ public class BitrepositoryIngesterComponentIT {
         String pathToConfig = System.getProperty("bitrepository.ingester.config");
         String pathToTestBatch = System.getProperty("integration.test.newspaper.testdata");
         Properties properties = new Properties();
-        properties.load(new FileInputStream(pathToConfig + "/bitrepository-ingester.properties"));
+        properties.load(new FileInputStream(pathToConfig + "/config.properties"));
         properties.setProperty(BitrepositoryIngesterComponent.SETTINGS_DIR_PROPERTY, pathToConfig);
         properties.setProperty("scratch", pathToTestBatch + "/" + "bad-bad-batch");
 
