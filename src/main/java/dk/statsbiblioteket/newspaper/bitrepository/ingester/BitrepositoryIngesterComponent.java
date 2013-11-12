@@ -68,6 +68,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         TreeIngester ingester = new TreeIngester(
                 configuration.getCollectionID(),
+                settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue(),
                 new BatchImageLocator(createIterator(batch),
                 getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
                 ingestClient,

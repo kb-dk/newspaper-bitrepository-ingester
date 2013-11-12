@@ -1,5 +1,6 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import javax.jms.JMSException;
@@ -27,8 +28,19 @@ public class TreeIngester {
     private final ParallelOperationLimiter parallelOperationLimiter;
     private final PutFileClient putFileClient;
 
+    /**
+     *
+     * @param collectionID The collectionID of the collection to store the ingested files in.
+     * @param timoutForLastOperation How many milli seconfs should the ingester wait for the last operation to finish
+     *                               before force quiting
+     * @param fileLocator Used for finding the relevant files.
+     * @param putFileClient For handling the actual ingests.
+     * @param resultCollector Failures are logged here.
+     * @param maxNumberOfParallelPuts The number of puts to to perform in parallel.
+     */
     public TreeIngester(
             String collectionID,
+            long timoutForLastOperation,
             IngestableFileLocator fileLocator,
             PutFileClient putFileClient,
             ResultCollector resultCollector,
@@ -36,7 +48,8 @@ public class TreeIngester {
         this.collectionID = collectionID;
         this.resultCollector = resultCollector;
         this.fileLocator = fileLocator;
-        parallelOperationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
+        parallelOperationLimiter = new ParallelOperationLimiter(
+                maxNumberOfParallelPuts, (int)timoutForLastOperation/1000);
         handler = new OperationEventHandler(parallelOperationLimiter);
         this.putFileClient = putFileClient;
     }
@@ -57,6 +70,8 @@ public class TreeIngester {
                 log.error("Failed to find file to ingest.", e);
             }
         }  while (file != null);
+
+        parallelOperationLimiter.waitForFinish();
     }
 
     /**
@@ -95,7 +110,7 @@ public class TreeIngester {
                 log.debug("Completed ingest of file " + event.getFileID());
                 operationLimiter.removeJob(event.getFileID());
             } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
-                log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event.getInfo());
+                log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event);
                 resultCollector.addFailure(event.getFileID(), "Ingest failure", "BitrepositoryIngester", event.getInfo());
                 operationLimiter.removeJob(event.getFileID());
             }
@@ -108,9 +123,11 @@ public class TreeIngester {
      */
     protected class ParallelOperationLimiter {
         private final BlockingQueue<String> activeOperations;
+        private final int secondsToWaitForFinish;
 
-        ParallelOperationLimiter(int limit) {
+        ParallelOperationLimiter(int limit, int timeToWaitForFinish) {
             activeOperations = new LinkedBlockingQueue<>(limit);
+            this.secondsToWaitForFinish = timeToWaitForFinish;
         }
 
         /**
@@ -127,6 +144,25 @@ public class TreeIngester {
 
         void removeJob(String fileID) {
             activeOperations.remove(fileID);
+        }
+
+        public void waitForFinish() {
+            int secondsWaiting = 0;
+            while (!activeOperations.isEmpty() && secondsWaiting++ < secondsToWaitForFinish) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    //No problem
+                }
+            }
+            if (secondsWaiting > secondsToWaitForFinish) {
+                String message = "Timeout(" + secondsToWaitForFinish+ "s) waiting for last files (" + Arrays.toString(activeOperations.toArray()) + ")to complete.";
+                log.warn(message);
+                for (String fileID : activeOperations.toArray(new String[activeOperations.size()])) {
+                    resultCollector.addFailure(fileID, "Ingest failure", "BitrepositoryIngester",
+                            "Timeout waiting for last files to be ingested.");
+                }
+            }
         }
     }
 }
