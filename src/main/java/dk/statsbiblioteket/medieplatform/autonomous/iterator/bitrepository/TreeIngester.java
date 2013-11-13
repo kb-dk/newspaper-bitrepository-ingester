@@ -31,8 +31,8 @@ public class TreeIngester {
     /**
      *
      * @param collectionID The collectionID of the collection to store the ingested files in.
-     * @param timoutForLastOperation How many milli seconfs should the ingester wait for the last operation to finish
-     *                               before force quiting
+     * @param timoutForLastOperation How many milliseconds should the ingester wait for the last files found in the tree
+     *                               to finish ingesting before force quitting .
      * @param fileLocator Used for finding the relevant files.
      * @param putFileClient For handling the actual ingests.
      * @param resultCollector Failures are logged here.
@@ -148,7 +148,7 @@ public class TreeIngester {
 
         public void waitForFinish() {
             int secondsWaiting = 0;
-            while (!activeOperations.isEmpty() && secondsWaiting++ < secondsToWaitForFinish) {
+            while (!activeOperations.isEmpty() && (secondsWaiting++ < secondsToWaitForFinish)) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
