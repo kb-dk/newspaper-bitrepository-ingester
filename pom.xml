@@ -61,7 +61,7 @@
     <dependency>
       <groupId>dk.statsbiblioteket.doms.central</groupId>
       <artifactId>centralWebservice-lib</artifactId>
-      <version>0.0.29</version>
+      <version>0.0.30-SNAPSHOT</version>
     </dependency>
 
     <dependency>
