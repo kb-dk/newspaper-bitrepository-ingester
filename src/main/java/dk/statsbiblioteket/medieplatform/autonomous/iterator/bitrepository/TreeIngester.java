@@ -110,6 +110,8 @@ public class TreeIngester {
             }
         } catch (JMSException e) {
             log.warn("Failed to shutdown messagebus connection", e);
+        } catch (Exception e) {
+            log.warn("Caught unexpected exception while closing messagebus down", e);
         }
     }
 
