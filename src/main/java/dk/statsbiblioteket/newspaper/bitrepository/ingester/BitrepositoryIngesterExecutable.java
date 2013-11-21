@@ -34,6 +34,8 @@ public class BitrepositoryIngesterExecutable {
         Map<String, Boolean> result = AutonomousComponentUtils.startAutonomousComponent(properties, component);
 
         AutonomousComponentUtils.printResults(result);
+        log.info("Main done :");
+        System.exit(0);
     }
 
     /**

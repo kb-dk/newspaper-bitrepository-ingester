@@ -93,6 +93,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 configuration.getBitmagBaseUrl());
         ingester.performIngest();
         ingester.shutdown();
+        log.info("Finished work on batch '" + batch.getFullID() + "'");
     }
 
     private void forceOnline(Batch batch, IngesterConfiguration ingesterConfiguration) {
