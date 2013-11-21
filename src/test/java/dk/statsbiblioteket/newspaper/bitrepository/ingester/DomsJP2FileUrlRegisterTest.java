@@ -22,7 +22,7 @@ import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 public class DomsJP2FileUrlRegisterTest {
     public static final String FILE_URL = "http://bitfinder.statsbiblioteket.dk/newspaper/foo";
     public static final String FILE_NAME = "foo";
-    public static final String FILE_PATH = "B400022028241-RT1/400022028241-14/1795-06-13-01/foo";
+    public static final String FILE_PATH = "path:B400022028241-RT1/400022028241-14/1795-06-13-01/foo";
     public static final String CHECKSUM = "abcd";
 
     @Test
@@ -39,7 +39,7 @@ public class DomsJP2FileUrlRegisterTest {
             fail("Should not throw exception");
         }
         
-        verify(mockCentral).findObjectFromDCIdentifier(DomsJP2FileUrlRegister.PATH_PREFIX + FILE_PATH);
+        verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("contents"), eq(FILE_NAME), eq(FILE_URL), 
                 anyString(), eq(DomsJP2FileUrlRegister.JP2_MIMETYPE), anyListOf(String.class) ,anyString());
         verify(mockCentral).addRelation(eq(TEST_PID), eq("info:fedora/" + TEST_PID + "/contents"),
@@ -62,7 +62,7 @@ public class DomsJP2FileUrlRegisterTest {
             // We expect this to happen.
         }
                 
-        verify(mockCentral).findObjectFromDCIdentifier(DomsJP2FileUrlRegister.PATH_PREFIX + FILE_PATH);
+        verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verifyNoMoreInteractions(mockCentral);
     }
 }

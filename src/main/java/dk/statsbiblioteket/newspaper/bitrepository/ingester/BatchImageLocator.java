@@ -36,7 +36,7 @@ public class BatchImageLocator extends AbstractImageLocator {
         try {
             return new IngestableFile(
                     getFileID(fileEvent), getFileUrl(fileEvent), getChecksum(fileEvent.getChecksum()), null, 
-                    "path:" + fileEvent.getName());
+                    "path:" + getFileName(fileEvent));
         } catch (IOException e) {
             throw new RuntimeException();
         }

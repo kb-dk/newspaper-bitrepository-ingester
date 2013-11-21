@@ -13,7 +13,6 @@ import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 public class DomsJP2FileUrlRegister {
 
     public static final String JP2_MIMETYPE = "image/jp2";
-    public static final String PATH_PREFIX = "path:";
     public static final String RELATION_PREDICATE = "http://doms.statsbiblioteket.dk/relations/default/0/1/#hasMD5";
     public static final String CONTENTS = "contents";
     
@@ -34,14 +33,14 @@ public class DomsJP2FileUrlRegister {
     public void registerJp2File(String path, String filename, String url, String checksum) throws DomsObjectNotFoundException {
         List<String> objects;
         try {
-            objects = enhancedFedora.findObjectFromDCIdentifier(PATH_PREFIX + path);
+            objects = enhancedFedora.findObjectFromDCIdentifier(path);
 
             if(objects.size() != 1) {
                 throw new DomsObjectNotFoundException("Expected excatly 1 identifier from DOMS, got " + objects.size()
-                        + ". Don't know where to add file.");
+                        + " for object with DCIdentifier: '" + path + "'. Don't know where to add file.");
             }
             String fileObjectPid = objects.get(0);
-            enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, filename, url, null, 
+            enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, filename, url, "application/octet-stream", 
                     JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
             enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
                     checksum, true, "Adding file after bitrepository ingest");
@@ -52,3 +51,14 @@ public class DomsJP2FileUrlRegister {
     }
 
 }
+
+/*
+
+String pid,
+String datastream,
+String filename,
+String permanentURL,
+String formatURI,
+String mimetype,
+List<String> alternativeIdentifiers,
+String comment)*/

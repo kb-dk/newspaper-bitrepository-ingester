@@ -126,7 +126,7 @@ public class TreeIngester {
                 log.debug("Completed ingest of file " + event.getFileID());
                 String url = baseUrl + job.getFileID();
                 try {
-                    urlRegister.registerJp2File("path", job.getFileID(), url, job.getChecksum());
+                    urlRegister.registerJp2File(job.getPath(), job.getFileID(), url, job.getChecksum());
                 } catch (DomsObjectNotFoundException e) {
                     resultCollector.addFailure(event.getFileID(), "Ingest failure", "BitrepositoryIngester",
                             "Could not find the proper DOMS object to register the ingested file to.", e.getMessage());
@@ -168,7 +168,7 @@ public class TreeIngester {
             return checksum;
         }
         
-        String path() {
+        String getPath() {
             return path;
         }
     }
