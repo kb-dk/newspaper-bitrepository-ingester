@@ -46,17 +46,17 @@
     <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>autonomous-component</artifactId>
-      <version>0.2</version>
+      <version>${batch-framework-version}</version>
     </dependency>
     <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>tree-processor</artifactId>
-      <version>0.2</version>
+      <version>${batch-framework-version}</version>
     </dependency>
     <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>runnable-compoment</artifactId>
-      <version>0.2</version>
+      <version>${batch-framework-version}</version>
     </dependency>
     <dependency>
       <groupId>dk.statsbiblioteket.doms.central</groupId>
@@ -139,5 +139,6 @@
   </build>
   <properties>
     <bitrepository-version>1.0</bitrepository-version>
+    <batch-framework-version>0.3-SNAPSHOT</batch-framework-version>
   </properties>
 </project>
