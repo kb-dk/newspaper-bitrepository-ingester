@@ -23,6 +23,7 @@ public class DomsJP2FileUrlRegisterTest {
     public static final String FILE_URL = "http://bitfinder.statsbiblioteket.dk/newspaper/foo";
     public static final String FILE_NAME = "foo";
     public static final String FILE_PATH = "B400022028241-RT1/400022028241-14/1795-06-13-01/foo";
+    public static final String CHECKSUM = "abcd";
 
     @Test
     public void goodCaseRegistrationTest() throws BackendInvalidCredsException, BackendMethodFailedException, 
@@ -32,11 +33,17 @@ public class DomsJP2FileUrlRegisterTest {
         when(mockCentral.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(TEST_PID));
         DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral);
         
-        register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL);
+        try {
+            register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL, CHECKSUM);
+        } catch (DomsObjectNotFoundException e) {
+            fail("Should not throw exception");
+        }
         
         verify(mockCentral).findObjectFromDCIdentifier(DomsJP2FileUrlRegister.PATH_PREFIX + FILE_PATH);
         verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("contents"), eq(FILE_NAME), eq(FILE_URL), 
                 anyString(), eq(DomsJP2FileUrlRegister.JP2_MIMETYPE), anyListOf(String.class) ,anyString());
+        verify(mockCentral).addRelation(eq(TEST_PID), eq("info:fedora/" + TEST_PID + "/contents"),
+                eq(DomsJP2FileUrlRegister.RELATION_PREDICATE), eq(CHECKSUM), eq(true), anyString());
         verifyNoMoreInteractions(mockCentral);
     }
     
@@ -49,9 +56,9 @@ public class DomsJP2FileUrlRegisterTest {
         DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral);
 
         try {
-            register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL);
+            register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL, CHECKSUM);
             fail();
-        } catch (RuntimeException e) {
+        } catch (DomsObjectNotFoundException e) {
             // We expect this to happen.
         }
                 

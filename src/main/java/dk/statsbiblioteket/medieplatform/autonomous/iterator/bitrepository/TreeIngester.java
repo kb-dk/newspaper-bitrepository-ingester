@@ -1,13 +1,19 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
 import javax.jms.JMSException;
 
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
+import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegister;
+import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsObjectNotFoundException;
+
 import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.client.eventhandler.OperationEvent;
+import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.bitrepository.protocol.messagebus.MessageBus;
 import org.bitrepository.protocol.messagebus.MessageBusManager;
@@ -27,6 +33,8 @@ public class TreeIngester {
     private final OperationEventHandler handler;
     private final ParallelOperationLimiter parallelOperationLimiter;
     private final PutFileClient putFileClient;
+    private final DomsJP2FileUrlRegister urlRegister;
+    private final String baseUrl;
 
     /**
      *
@@ -44,7 +52,9 @@ public class TreeIngester {
             IngestableFileLocator fileLocator,
             PutFileClient putFileClient,
             ResultCollector resultCollector,
-            int maxNumberOfParallelPuts) {
+            int maxNumberOfParallelPuts,
+            DomsJP2FileUrlRegister urlRegister,
+            String baseUrl) {
         this.collectionID = collectionID;
         this.resultCollector = resultCollector;
         this.fileLocator = fileLocator;
@@ -52,6 +62,8 @@ public class TreeIngester {
                 maxNumberOfParallelPuts, (int)timoutForLastOperation/1000);
         handler = new OperationEventHandler(parallelOperationLimiter);
         this.putFileClient = putFileClient;
+        this.urlRegister = urlRegister;
+        this.baseUrl = baseUrl;
     }
 
     public void performIngest() {
@@ -78,7 +90,10 @@ public class TreeIngester {
      * Calls the concrete putFileClient blocking if the maxNumberOfParallelPut are exceeded.
      */
     private void putFile(IngestableFile ingestableFile) {
-        parallelOperationLimiter.addJob(ingestableFile.getFileID());
+        PutJob job = new PutJob(ingestableFile.getFileID(), 
+                Base16Utils.decodeBase16(ingestableFile.getChecksum().getChecksumValue()),
+                ingestableFile.getPath());
+        parallelOperationLimiter.addJob(job);
         putFileClient.putFile(collectionID,
                 ingestableFile.getUrl(), ingestableFile.getFileID(), DEFAULT_FILE_SIZE,
                 ingestableFile.getChecksum(), null, handler, null);
@@ -107,13 +122,54 @@ public class TreeIngester {
         @Override
         public void handleEvent(OperationEvent event) {
             if (event.getEventType().equals(OperationEvent.OperationEventType.COMPLETE)) {
+                PutJob job = getJob(event);
                 log.debug("Completed ingest of file " + event.getFileID());
-                operationLimiter.removeJob(event.getFileID());
+                String url = baseUrl + job.getFileID();
+                try {
+                    urlRegister.registerJp2File("path", job.getFileID(), url, job.getChecksum());
+                } catch (DomsObjectNotFoundException e) {
+                    resultCollector.addFailure(event.getFileID(), "Ingest failure", "BitrepositoryIngester",
+                            "Could not find the proper DOMS object to register the ingested file to.", e.getMessage());
+                }
+                operationLimiter.removeJob(job);
+                
             } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
+                PutJob job = getJob(event);
                 log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event);
                 resultCollector.addFailure(event.getFileID(), "Ingest failure", "BitrepositoryIngester", event.getInfo());
-                operationLimiter.removeJob(event.getFileID());
+                operationLimiter.removeJob(job);
             }
+        }
+
+        private PutJob getJob(OperationEvent event) {
+            PutJob job = null;
+            job = operationLimiter.getJob(event.getFileID());
+            return job;
+        }
+    }
+    
+    
+    private class PutJob {
+        private final String fileID;
+        private final String checksum;
+        private final String path;
+        
+        PutJob(String fileID, String checksum, String path) {
+            this.fileID = fileID;
+            this.checksum = checksum;
+            this.path = path;
+        }
+        
+        String getFileID() {
+            return fileID;
+        }
+        
+        String getChecksum() {
+            return checksum;
+        }
+        
+        String path() {
+            return path;
         }
     }
 
@@ -122,7 +178,7 @@ public class TreeIngester {
      * will block if a specified limit is reached.
      */
     protected class ParallelOperationLimiter {
-        private final BlockingQueue<String> activeOperations;
+        private final BlockingQueue<PutJob> activeOperations;
         private final int secondsToWaitForFinish;
 
         ParallelOperationLimiter(int limit, int timeToWaitForFinish) {
@@ -134,16 +190,37 @@ public class TreeIngester {
          * Will block until the if the activeOperations queue limit is exceeded and unblock when a job is remove.
          * @param fileID Used as ID for the job in the queue.
          */
-        void addJob(String fileID) {
+        void addJob(PutJob job) {
             try {
-                activeOperations.put(fileID);
+                activeOperations.put(job);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
+        
+        /**
+         * Gets the PutJob for fileID
+         * @param fileID The fileID to get the job for
+         * @return PutJob the PutJob with relevant info for the job. 
+         */
+        PutJob getJob(String fileID) {
+            Iterator<PutJob> iter = activeOperations.iterator();
+            PutJob job = null;
+            while(iter.hasNext()) {
+                job = iter.next();
+                if(job.getFileID().equals(fileID)) {
+                    break;
+                }
+            }
+            return job;
+        }
 
-        void removeJob(String fileID) {
-            activeOperations.remove(fileID);
+        /**
+         * Removes a job from the queue
+         * @param job the PutJob to remove 
+         */
+        void removeJob(PutJob job) {
+            activeOperations.remove(job);
         }
 
         public void waitForFinish() {
@@ -158,8 +235,8 @@ public class TreeIngester {
             if (secondsWaiting > secondsToWaitForFinish) {
                 String message = "Timeout(" + secondsToWaitForFinish+ "s) waiting for last files (" + Arrays.toString(activeOperations.toArray()) + ")to complete.";
                 log.warn(message);
-                for (String fileID : activeOperations.toArray(new String[activeOperations.size()])) {
-                    resultCollector.addFailure(fileID, "Ingest failure", "BitrepositoryIngester",
+                for (PutJob job : activeOperations.toArray(new PutJob[activeOperations.size()])) {
+                    resultCollector.addFailure(job.getFileID(), "Ingest failure", "BitrepositoryIngester",
                             "Timeout waiting for last files to be ingested.");
                 }
             }

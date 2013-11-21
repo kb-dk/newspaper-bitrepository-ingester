@@ -1,9 +1,13 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
+import java.net.MalformedURLException;
 import java.util.Properties;
+
+import javax.xml.bind.JAXBException;
 
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
+import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.AbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
@@ -35,9 +39,9 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     public static final String CERTIFICATE_PROPERTY="bitrepository.ingester.certificate";
     public static final String URL_TO_BATCH_DIR_PROPERTY="bitrepository.ingester.urltobatchdir";
     public static final String MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY="bitrepository.ingester.numberofparrallelPuts";
-    public static final String DOMS_CENTRAL_URL_PROPERTY = "fedora.server";
-    public static final String DOMS_USER_PROPERTY = "fedora.admin.username";
-    public static final String DOMS_PASS_PROPERTY = "fedora.admin.password";
+    public static final String DOMS_CENTRAL_URL_PROPERTY = "domsUrl";
+    public static final String DOMS_USER_PROPERTY = "domsUser";
+    public static final String DOMS_PASS_PROPERTY = "domsPass";
     public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
     
     public BitrepositoryIngesterComponent(Properties properties) {
@@ -66,13 +70,16 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(BITMAG_BASEURL_PROPERTY));
         Settings settings = loadSettings(configuration);
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
+        DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(getEnhancedFedora(configuration));
         TreeIngester ingester = new TreeIngester(
                 configuration.getCollectionID(),
                 settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue(),
                 new BatchImageLocator(createIterator(batch),
                 getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
                 ingestClient,
-                resultCollector, configuration.getMaxNumberOfParallelPuts());
+                resultCollector, configuration.getMaxNumberOfParallelPuts(),
+                urlRegister,
+                configuration.getBitmagBaseUrl());
         ingester.performIngest();
         ingester.shutdown();
     }
@@ -83,6 +90,16 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
             return new EnhancedFedoraImpl(creds, configuration.getDomsUrl(), null, null);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+    
+    protected EnhancedFedora getEnhancedFedora(IngesterConfiguration ingesterConfig) {
+        Credentials creds = new Credentials(ingesterConfig.getDomsUser(), ingesterConfig.getDomsPass());
+        try {
+            EnhancedFedoraImpl fedora = new EnhancedFedoraImpl(creds, ingesterConfig.getDomsUrl(), null, null);
+            return fedora;
+        } catch (MalformedURLException | PIDGeneratorException | JAXBException e) {
+            throw new RuntimeException("Failed to get a connection to DOMS.", e);
         }
     }
     
