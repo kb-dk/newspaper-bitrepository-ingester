@@ -1,6 +1,9 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBException;
@@ -28,11 +31,14 @@ import org.bitrepository.protocol.security.MessageAuthenticator;
 import org.bitrepository.protocol.security.MessageSigner;
 import org.bitrepository.protocol.security.OperationAuthorizor;
 import org.bitrepository.protocol.security.PermissionStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Checks the directory structure of a batch. This should run both at Ninestars and at SB.
  */
 public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
+    private final Logger log = LoggerFactory.getLogger(getClass());
     public static final String COLLECTIONID_PROPERTY="bitrepository.ingester.collectionid";
     public static final String COMPONENTID_PROPERTY="bitrepository.ingester.componentid";
     public static final String SETTINGS_DIR_PROPERTY="bitrepository.ingester.settingsdir";
@@ -43,6 +49,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     public static final String DOMS_USER_PROPERTY = "domsUser";
     public static final String DOMS_PASS_PROPERTY = "domsPass";
     public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
+    public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
     
     public BitrepositoryIngesterComponent(Properties properties) {
         super(properties);
@@ -67,8 +74,12 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(DOMS_CENTRAL_URL_PROPERTY),
                 getProperties().getProperty(DOMS_USER_PROPERTY), 
                 getProperties().getProperty(DOMS_PASS_PROPERTY), 
-                getProperties().getProperty(BITMAG_BASEURL_PROPERTY));
+                getProperties().getProperty(BITMAG_BASEURL_PROPERTY), 
+                getProperties().getProperty(FORCE_ONLINE_COMMAND));
         Settings settings = loadSettings(configuration);
+        
+        forceOnline(batch, configuration);
+        
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(getEnhancedFedora(configuration));
         TreeIngester ingester = new TreeIngester(
@@ -84,6 +95,26 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         ingester.shutdown();
     }
 
+    private void forceOnline(Batch batch, IngesterConfiguration ingesterConfiguration) {
+        String forceOnlineCommand = ingesterConfiguration.getForceOnlineCommand();
+        List<String> command = new ArrayList<String>();
+        command.add(forceOnlineCommand);
+        command.add(batch.getFullID());
+        
+        int exitCode = -1;
+        try {
+            Process forceOnlineProcess = new ProcessBuilder(command).start();
+            exitCode = forceOnlineProcess.waitFor();
+        } catch (IOException | InterruptedException e) {
+            log.error("Failed to call forceOnline command command was: '" + command.toString() + "'.");
+        }
+        
+        if(exitCode != 0) {
+            log.warn("Call to forceOnline command was not a success. Command was: '" + command.toString() + "'");
+        }
+        
+    }
+    
     protected EnhancedFedora createEnhancedFedora(IngesterConfiguration configuration) {
         Credentials creds = new Credentials(configuration.getDomsUser(), configuration.getDomsPass());
         try {
