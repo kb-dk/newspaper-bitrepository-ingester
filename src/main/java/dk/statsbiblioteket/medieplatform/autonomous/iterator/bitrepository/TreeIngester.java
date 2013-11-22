@@ -10,6 +10,7 @@ import javax.jms.JMSException;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegister;
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsObjectNotFoundException;
+import dk.statsbiblioteket.util.Strings;
 
 import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.client.eventhandler.OperationEvent;
@@ -130,15 +131,16 @@ public class TreeIngester {
                 try {
                     urlRegister.registerJp2File(job.getPath(), job.getFileID(), url, job.getChecksum());
                 } catch (DomsObjectNotFoundException e) {
-                    resultCollector.addFailure(event.getFileID(), "Ingest failure", "BitrepositoryIngester",
-                            "Could not find the proper DOMS object to register the ingested file to.", e.getMessage());
+                    resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(),
+                            "Could not find the proper DOMS object to register the ingested file to: " + e.toString(),
+                            Strings.getStackTrace(e));
                 }
                 operationLimiter.removeJob(job);
                 
             } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
                 PutJob job = getJob(event);
                 log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event);
-                resultCollector.addFailure(event.getFileID(), "Ingest failure", "BitrepositoryIngester", event.getInfo());
+                resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(), event.getInfo());
                 operationLimiter.removeJob(job);
             }
         }
@@ -189,8 +191,8 @@ public class TreeIngester {
         }
 
         /**
-         * Will block until the if the activeOperations queue limit is exceeded and unblock when a job is remove.
-         * @param fileID Used as ID for the job in the queue.
+         * Will block until the if the activeOperations queue limit is exceeded and unblock when a job is removed.
+         * @param job The job in the queue.
          */
         void addJob(PutJob job) {
             try {
@@ -238,7 +240,7 @@ public class TreeIngester {
                 String message = "Timeout(" + secondsToWaitForFinish+ "s) waiting for last files (" + Arrays.toString(activeOperations.toArray()) + ")to complete.";
                 log.warn(message);
                 for (PutJob job : activeOperations.toArray(new PutJob[activeOperations.size()])) {
-                    resultCollector.addFailure(job.getFileID(), "Ingest failure", "BitrepositoryIngester",
+                    resultCollector.addFailure(job.getFileID(), "ingest", getClass().getSimpleName(),
                             "Timeout waiting for last files to be ingested.");
                 }
             }
