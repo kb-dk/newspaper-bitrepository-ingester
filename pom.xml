@@ -8,7 +8,7 @@
   <parent>
     <groupId>dk.statsbiblioteket.newspaper</groupId>
     <artifactId>newspaper-parent</artifactId>
-    <version>0.3</version>
+    <version>1.0</version>
   </parent>
 
   <scm>
