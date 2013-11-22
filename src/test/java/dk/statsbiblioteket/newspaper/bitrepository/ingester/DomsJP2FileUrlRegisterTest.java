@@ -27,17 +27,13 @@ public class DomsJP2FileUrlRegisterTest {
 
     @Test
     public void goodCaseRegistrationTest() throws BackendInvalidCredsException, BackendMethodFailedException, 
-            BackendInvalidResourceException {
+            BackendInvalidResourceException, DomsObjectNotFoundException {
         EnhancedFedora mockCentral = mock(EnhancedFedora.class);
         String TEST_PID = "pidA";
         when(mockCentral.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(TEST_PID));
         DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral);
         
-        try {
-            register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL, CHECKSUM);
-        } catch (DomsObjectNotFoundException e) {
-            fail("Should not throw exception");
-        }
+        register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL, CHECKSUM);
         
         verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("contents"), eq(FILE_NAME), eq(FILE_URL), 

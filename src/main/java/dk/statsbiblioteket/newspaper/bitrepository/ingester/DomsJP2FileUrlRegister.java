@@ -8,7 +8,7 @@ import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 
 /**
- * Class to handle the registration of the bit repository URL for a given JP2000 file in DOMS.  
+ * Handle the registration of the bit repository URL for a given JP2000 file in DOMS.  
  */
 public class DomsJP2FileUrlRegister {
 

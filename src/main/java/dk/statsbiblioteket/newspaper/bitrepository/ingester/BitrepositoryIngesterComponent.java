@@ -81,7 +81,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         forceOnline(batch, configuration);
         
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(getEnhancedFedora(configuration));
+        DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration));
         TreeIngester ingester = new TreeIngester(
                 configuration.getCollectionID(),
                 settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue(),
@@ -96,6 +96,12 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         log.info("Finished work on batch '" + batch.getFullID() + "'");
     }
 
+    /**
+     * Method to handle the task of forcing (keeping) files online when they are ingested. 
+     * The method calls a command that's present on PATH. 
+     * @param batch The batch from which to keep files online 
+     * @param ingesterConfiguration the configuration (for figuring out which command to call)
+     */
     private void forceOnline(Batch batch, IngesterConfiguration ingesterConfiguration) {
         String forceOnlineCommand = ingesterConfiguration.getForceOnlineCommand();
         List<String> command = new ArrayList<String>();
@@ -116,16 +122,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         
     }
     
-    protected EnhancedFedora createEnhancedFedora(IngesterConfiguration configuration) {
-        Credentials creds = new Credentials(configuration.getDomsUser(), configuration.getDomsPass());
-        try {
-            return new EnhancedFedoraImpl(creds, configuration.getDomsUrl(), null, null);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-    
-    protected EnhancedFedora getEnhancedFedora(IngesterConfiguration ingesterConfig) {
+    protected EnhancedFedora createEnhancedFedora(IngesterConfiguration ingesterConfig) {
         Credentials creds = new Credentials(ingesterConfig.getDomsUser(), ingesterConfig.getDomsPass());
         try {
             EnhancedFedoraImpl fedora = new EnhancedFedoraImpl(creds, ingesterConfig.getDomsUrl(), null, null);
