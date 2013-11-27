@@ -11,10 +11,12 @@ public class IngesterConfiguration {
     private final String domsPass;
     private final String bitmagBaseUrl;
     private final String forceOnlineCommand;
+    private final String pidgeneratorurl;
 
-    public IngesterConfiguration(String componentID, String collectionID, String settingsDir, 
-            String certificateLocation, int maxNumberOfParallelPuts, String domsUrl, 
-            String domsUser, String domsPass, String bitmagBaseUrl, String forceOnlineCommand) {
+    public IngesterConfiguration(String componentID, String collectionID, String settingsDir,
+                                 String certificateLocation, int maxNumberOfParallelPuts, String domsUrl,
+                                 String domsUser, String domsPass, String bitmagBaseUrl, String forceOnlineCommand,
+                                 String pidgeneratorurl) {
         this.componentID = componentID;
         this.collectionID = collectionID;
         SettingsDir = settingsDir;
@@ -25,6 +27,7 @@ public class IngesterConfiguration {
         this.domsPass = domsPass;
         this.bitmagBaseUrl = bitmagBaseUrl;
         this.forceOnlineCommand = forceOnlineCommand;
+        this.pidgeneratorurl = pidgeneratorurl;
     }
 
     public String getComponentID() {
@@ -65,5 +68,9 @@ public class IngesterConfiguration {
     
     public String getForceOnlineCommand() {
         return forceOnlineCommand;
+    }
+
+    public String getPidgeneratorurl() {
+        return pidgeneratorurl;
     }
 }

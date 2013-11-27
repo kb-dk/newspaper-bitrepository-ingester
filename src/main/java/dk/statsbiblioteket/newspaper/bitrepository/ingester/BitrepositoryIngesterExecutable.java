@@ -13,8 +13,6 @@ import org.slf4j.LoggerFactory;
 
 /** AutonomousComponent wrapper for the BitrepositoryIngester. */
 public class BitrepositoryIngesterExecutable {
-    public final static String CONFIG_DIR_PROPERTY = "configDir";
-
     private static Logger log = LoggerFactory.getLogger(BitrepositoryIngesterExecutable.class);
 
     /**

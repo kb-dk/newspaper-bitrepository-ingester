@@ -14,6 +14,7 @@ import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGenera
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.AbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
+import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
@@ -45,9 +46,6 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     public static final String CERTIFICATE_PROPERTY="bitrepository.ingester.certificate";
     public static final String URL_TO_BATCH_DIR_PROPERTY="bitrepository.ingester.urltobatchdir";
     public static final String MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY="bitrepository.ingester.numberofparrallelPuts";
-    public static final String DOMS_CENTRAL_URL_PROPERTY = "domsUrl";
-    public static final String DOMS_USER_PROPERTY = "domsUser";
-    public static final String DOMS_PASS_PROPERTY = "domsPass";
     public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
     public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
     
@@ -57,7 +55,7 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
 
     @Override
     public String getEventID() {
-        return "Batch ingested";
+        return "Data_Archived";
     }
 
     /**
@@ -71,11 +69,12 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(SETTINGS_DIR_PROPERTY),
                 getProperties().getProperty(SETTINGS_DIR_PROPERTY) + "/" + getProperties().getProperty(CERTIFICATE_PROPERTY),
                 Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)),
-                getProperties().getProperty(DOMS_CENTRAL_URL_PROPERTY),
-                getProperties().getProperty(DOMS_USER_PROPERTY), 
-                getProperties().getProperty(DOMS_PASS_PROPERTY), 
+                getProperties().getProperty(ConfigConstants.DOMS_URL),
+                getProperties().getProperty(ConfigConstants.DOMS_USERNAME),
+                getProperties().getProperty(ConfigConstants.DOMS_PASSWORD),
                 getProperties().getProperty(BITMAG_BASEURL_PROPERTY), 
-                getProperties().getProperty(FORCE_ONLINE_COMMAND));
+                getProperties().getProperty(FORCE_ONLINE_COMMAND),
+                getProperties().getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL));
         Settings settings = loadSettings(configuration);
         
         forceOnline(batch, configuration);
@@ -125,7 +124,10 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
     protected EnhancedFedora createEnhancedFedora(IngesterConfiguration ingesterConfig) {
         Credentials creds = new Credentials(ingesterConfig.getDomsUser(), ingesterConfig.getDomsPass());
         try {
-            EnhancedFedoraImpl fedora = new EnhancedFedoraImpl(creds, ingesterConfig.getDomsUrl(), null, null);
+            EnhancedFedoraImpl fedora = new EnhancedFedoraImpl(
+                    creds,
+                    ingesterConfig.getDomsUrl(),
+                    ingesterConfig.getPidgeneratorurl(), null);
             return fedora;
         } catch (MalformedURLException | PIDGeneratorException | JAXBException e) {
             throw new RuntimeException("Failed to get a connection to DOMS.", e);

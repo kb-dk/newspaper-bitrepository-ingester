@@ -16,7 +16,7 @@ public class BitrepositoryIngesterComponentIT {
     private final static String TEST_BATCH_ID = "400022028241";
     private String pathToConfig;
     private String pathToTestBatch;
-    private final Properties properties = new Properties();;
+    private final Properties properties = new Properties();
     /**
      * Tests that the ingester can parse a (small) production like batch.
      */
