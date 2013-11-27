@@ -3,10 +3,10 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 
 import dk.statsbiblioteket.medieplatform.autonomous.AutonomousComponentUtils;
+import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
 import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +18,18 @@ public class BitrepositoryIngesterExecutable {
     private static Logger log = LoggerFactory.getLogger(BitrepositoryIngesterExecutable.class);
 
     /**
+     * The class must have a main method, so it can be started as a command line tool
+     *
+     * @param args the arguments.
+     *
+     * @throws Exception
+     * @see AutonomousComponentUtils#parseArgs(String[])
+     */
+    public static void main(String... args) throws IOException {
+        System.exit(doMain(args));
+    }
+
+    /**
      * Main method, so it can be started as a command line tool.
      *
      * @param args the arguments.
@@ -25,17 +37,16 @@ public class BitrepositoryIngesterExecutable {
      * @throws Exception
      * @see dk.statsbiblioteket.medieplatform.autonomous.AutonomousComponentUtils#parseArgs(String[])
      */
-    public static void main(String[] args)
-            throws
-            Exception {
+    public static int doMain(String[] args) throws IOException {
         log.info("Starting with args {}", args);
         Properties properties = parseArgs(args);
         RunnableComponent component = new BitrepositoryIngesterComponent(properties);
-        Map<String, Boolean> result = AutonomousComponentUtils.startAutonomousComponent(properties, component);
 
-        AutonomousComponentUtils.printResults(result);
-        log.info("Main done :");
-        System.exit(0);
+        CallResult result = AutonomousComponentUtils.startAutonomousComponent(properties, component);
+        System.out.print(result);
+
+        if (result.getError() != null) return 2;
+        else return result.containsFailures();
     }
 
     /**
@@ -48,9 +59,7 @@ public class BitrepositoryIngesterExecutable {
      * @return as a properties
      * @throws java.io.IOException if the properties file could not be read
      */
-    public static Properties parseArgs(String[] args)
-            throws
-            IOException {
+    public static Properties parseArgs(String[] args) throws IOException {
         Properties properties = new Properties(System.getProperties());
         for (int i = 0;
              i < args.length;
