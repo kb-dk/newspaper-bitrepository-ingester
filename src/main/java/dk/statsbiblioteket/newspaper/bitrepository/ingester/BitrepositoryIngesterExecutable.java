@@ -41,7 +41,7 @@ public class BitrepositoryIngesterExecutable {
         RunnableComponent component = new BitrepositoryIngesterComponent(properties);
 
         CallResult result = AutonomousComponentUtils.startAutonomousComponent(properties, component);
-        System.out.println(result);
+        System.out.println("result was: " + result);
         return result.containsFailures();
     }
 
