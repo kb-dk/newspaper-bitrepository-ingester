@@ -36,27 +36,12 @@
     <dependency>
       <groupId>org.bitrepository.reference</groupId>
       <artifactId>bitrepository-client</artifactId>
-      <version>${bitrepository-version}</version>
+      <version>1.1</version>
     </dependency>
     <dependency>
       <groupId>dk.statsbiblioteket.newspaper</groupId>
       <artifactId>autonomous-component</artifactId>
-      <version>${batch-framework-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>dk.statsbiblioteket.newspaper</groupId>
-      <artifactId>tree-processor</artifactId>
-      <version>${batch-framework-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>dk.statsbiblioteket.newspaper</groupId>
-      <artifactId>runnable-compoment</artifactId>
-      <version>${batch-framework-version}</version>
-    </dependency>
-    <dependency>
-      <groupId>dk.statsbiblioteket.doms.central</groupId>
-      <artifactId>centralWebservice-lib</artifactId>
-      <version>1.0.1</version>
+      <version>1.1</version>
     </dependency>
 
     <dependency>
@@ -75,7 +60,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
-
 
     <dependency>
       <groupId>org.mockito</groupId>
@@ -128,11 +112,9 @@
           <forkCount>0</forkCount>
         </configuration>
       </plugin>
-
     </plugins>
   </build>
   <properties>
-    <bitrepository-version>1.1</bitrepository-version>
-    <batch-framework-version>1.1</batch-framework-version>
+    <batch-framework-version>1.2-SNAPSHOT</batch-framework-version>
   </properties>
 </project>
