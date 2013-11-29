@@ -14,7 +14,7 @@ public class DomsJP2FileUrlRegister {
 
     public static final String JP2_MIMETYPE = "image/jp2";
     public static final String RELATION_PREDICATE = "http://doms.statsbiblioteket.dk/relations/default/0/1/#hasMD5";
-    public static final String CONTENTS = "contents";
+    public static final String CONTENTS = "CONTENTS";
     
     private EnhancedFedora enhancedFedora;
     
@@ -51,14 +51,3 @@ public class DomsJP2FileUrlRegister {
     }
 
 }
-
-/*
-
-String pid,
-String datastream,
-String filename,
-String permanentURL,
-String formatURI,
-String mimetype,
-List<String> alternativeIdentifiers,
-String comment)*/

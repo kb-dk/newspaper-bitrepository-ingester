@@ -1,23 +1,19 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.testng.Assert.fail;
-
 import java.util.Arrays;
-
-import org.testng.annotations.Test;
 
 import dk.statsbiblioteket.doms.central.connectors.BackendInvalidCredsException;
 import dk.statsbiblioteket.doms.central.connectors.BackendInvalidResourceException;
 import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
+import org.testng.annotations.Test;
+
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
+import static org.testng.Assert.fail;
 
 public class DomsJP2FileUrlRegisterTest {
     public static final String FILE_URL = "http://bitfinder.statsbiblioteket.dk/newspaper/foo";
@@ -36,9 +32,9 @@ public class DomsJP2FileUrlRegisterTest {
         register.registerJp2File(FILE_PATH, FILE_NAME, FILE_URL, CHECKSUM);
         
         verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
-        verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("contents"), eq(FILE_NAME), eq(FILE_URL), 
+        verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("CONTENTS"), eq(FILE_NAME), eq(FILE_URL),
                 anyString(), eq(DomsJP2FileUrlRegister.JP2_MIMETYPE), anyListOf(String.class) ,anyString());
-        verify(mockCentral).addRelation(eq(TEST_PID), eq("info:fedora/" + TEST_PID + "/contents"),
+        verify(mockCentral).addRelation(eq(TEST_PID), eq("info:fedora/" + TEST_PID + "/CONTENTS"),
                 eq(DomsJP2FileUrlRegister.RELATION_PREDICATE), eq(CHECKSUM), eq(true), anyString());
         verifyNoMoreInteractions(mockCentral);
     }
