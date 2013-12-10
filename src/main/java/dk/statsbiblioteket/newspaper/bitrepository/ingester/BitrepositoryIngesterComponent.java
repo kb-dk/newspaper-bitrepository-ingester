@@ -90,9 +90,10 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 resultCollector, configuration.getMaxNumberOfParallelPuts(),
                 urlRegister,
                 configuration.getBitmagBaseUrl());
+        log.info("Starting ingest of batch '" + batch.getFullID() + "'");
         ingester.performIngest();
         ingester.shutdown();
-        log.info("Finished work on batch '" + batch.getFullID() + "'");
+        log.info("Finished ingest of batch '" + batch.getFullID() + "'");
     }
 
     /**
