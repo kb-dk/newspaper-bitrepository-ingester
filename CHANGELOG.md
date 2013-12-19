@@ -12,3 +12,6 @@ which should prevent the files for the batch from beingen moved from disk cache 
 * Updated to autonomous component framework 1.3
 * Limit the amount of heap space the ingester is allowed to use
 * Remove messages on stdout
+
+### 1.2
+* Make the ingester skip a batch if it cannot successfully force the files online
