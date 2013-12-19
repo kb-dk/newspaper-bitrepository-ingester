@@ -11,6 +11,7 @@ import org.bitrepository.common.settings.Settings;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import static org.testng.Assert.*;
 
 public class BitrepositoryIngesterComponentIT {
     private final static String TEST_BATCH_ID = "400022028241";
@@ -34,6 +35,29 @@ public class BitrepositoryIngesterComponentIT {
 
         bitrepositoryIngesterComponent.doWorkOnBatch(batch, resultCollector);
     }
+
+    /**
+     * Tests that the ingester can parse a (small) production like batch.
+     */
+    @Test(groups = "integrationTest")
+    public void forceOnlineFailure() throws Exception {
+        properties.setProperty(ConfigConstants.ITERATOR_FILESYSTEM_BATCHES_FOLDER, pathToTestBatch + "/" + "small-test-batch");
+        properties.setProperty(BitrepositoryIngesterComponent.FORCE_ONLINE_COMMAND, "false");
+        
+        BitrepositoryIngesterComponent bitrepositoryIngesterComponent =
+                new StubbedBitrepositoryIngesterComponent(properties);
+
+        ResultCollector resultCollector = new ResultCollector("Bitrepository ingester", "v0.1");
+        Batch batch = new Batch();
+        batch.setBatchID(TEST_BATCH_ID);
+        batch.setRoundTripNumber(1);
+
+        bitrepositoryIngesterComponent.doWorkOnBatch(batch, resultCollector);
+        
+        assertFalse(resultCollector.isSuccess());
+        resultCollector.toReport().contains("Failed to force batch online.");
+    }
+    
     /**
      * Tests that the ingester can parse a (small) production like batch.
      */
