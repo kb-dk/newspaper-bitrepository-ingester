@@ -77,7 +77,11 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
                 getProperties().getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL));
         Settings settings = loadSettings(configuration);
         
-        forceOnline(batch, configuration);
+        if(!forceOnline(batch, configuration)) {
+            resultCollector.addFailure(batch.getFullID(), "ingest", getClass().getSimpleName(), 
+                    "Failed to force batch online. Skipping ingest of batch");
+            return;
+        }
         
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration));
@@ -102,7 +106,8 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
      * @param batch The batch from which to keep files online 
      * @param ingesterConfiguration the configuration (for figuring out which command to call)
      */
-    private void forceOnline(Batch batch, IngesterConfiguration ingesterConfiguration) {
+    private boolean forceOnline(Batch batch, IngesterConfiguration ingesterConfiguration) throws IOException {
+        boolean success = false;
         String forceOnlineCommand = ingesterConfiguration.getForceOnlineCommand();
         List<String> command = new ArrayList<String>();
         command.add(forceOnlineCommand);
@@ -112,14 +117,17 @@ public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
         try {
             Process forceOnlineProcess = new ProcessBuilder(command).start();
             exitCode = forceOnlineProcess.waitFor();
-        } catch (IOException | InterruptedException e) {
-            log.error("Failed to call forceOnline command command was: '" + command.toString() + "'.");
+            if(exitCode == 0) {
+                success = true;
+            } else {
+                log.warn("Call to forceOnline command was not a success. Command was: '" + command.toString() + "'");
+                success = false;
+            } 
+        } catch (InterruptedException e) {
+            log.error("Was interrupted while calling forceOnline command. Command was: '" + command.toString() + "'.");
         }
         
-        if(exitCode != 0) {
-            log.warn("Call to forceOnline command was not a success. Command was: '" + command.toString() + "'");
-        }
-        
+        return success;
     }
     
     protected EnhancedFedora createEnhancedFedora(IngesterConfiguration ingesterConfig) {
