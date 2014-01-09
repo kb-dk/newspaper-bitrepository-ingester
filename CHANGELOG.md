@@ -15,3 +15,4 @@ which should prevent the files for the batch from beingen moved from disk cache 
 
 ### 1.2
 * Make the ingester skip a batch if it cannot successfully force the files online
+* Update to depend on newspaper-batch-event-framework 1.4
