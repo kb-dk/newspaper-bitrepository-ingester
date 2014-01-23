@@ -1,7 +1,9 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -12,8 +14,10 @@ import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegist
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsObjectNotFoundException;
 import dk.statsbiblioteket.util.Strings;
 
+import org.bitrepository.client.eventhandler.ContributorEvent;
 import org.bitrepository.client.eventhandler.EventHandler;
 import org.bitrepository.client.eventhandler.OperationEvent;
+import org.bitrepository.client.eventhandler.OperationFailedEvent;
 import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.bitrepository.protocol.messagebus.MessageBus;
@@ -140,7 +144,19 @@ public class TreeIngester {
             } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
                 PutJob job = getJob(event);
                 log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event);
-                resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(), event.getInfo());
+                List<String> components = new ArrayList<String>();
+                if(event instanceof OperationFailedEvent) {
+                    OperationFailedEvent opEvent = (OperationFailedEvent) event;
+                    List<ContributorEvent> events = opEvent.getComponentResults();
+                    for(ContributorEvent e : events) {
+                        if(e.getEventType().equals(OperationEvent.OperationEventType.COMPONENT_FAILED)) {
+                            components.add(e.getContributorID());
+                        }
+                    }
+                }
+                String failureDetails = "Failed conversation '" + event.getConversationID() 
+                        + "' with reason: '" + event.getInfo() + "' for components: " +components;
+                resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(), failureDetails);
                 operationLimiter.removeJob(job);
             }
         }
