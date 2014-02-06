@@ -70,7 +70,7 @@ public class BatchImageLocatorTest {
         when(fileEvent.getChecksum()).thenReturn(DEFAULT_MD5_CHECKSUM);
         when(treeIterator.next()).thenReturn(fileEvent);
         when(treeIterator.next()).
-                thenReturn(new NodeBeginsParsingEvent("UNMATCHED")).
+                thenReturn(new NodeBeginsParsingEvent("UNMATCHED", null)).
                 thenReturn(fileEvent);
         IngestableFile firstFile = locator.nextFile();
         assertEquals(firstFile.getFileID(), firstFileName);
