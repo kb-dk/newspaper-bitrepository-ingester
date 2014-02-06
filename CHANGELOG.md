@@ -1,3 +1,6 @@
+### 1.3.1
+* Update to newspaper-batch-event-framework 1.4.4, to make the component respect a maximum of reported failures
+
 ### 1.3
 * Update component to newspaper-batch-event-framework to make it quiet
 * Add details to failure report when components fail. 
