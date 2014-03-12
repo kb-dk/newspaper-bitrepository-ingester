@@ -12,10 +12,10 @@ import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
 import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
-import dk.statsbiblioteket.medieplatform.autonomous.AbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
+import dk.statsbiblioteket.medieplatform.autonomous.SBOIBasedAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
 
@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Checks the directory structure of a batch. This should run both at Ninestars and at SB.
  */
-public class BitrepositoryIngesterComponent extends AbstractRunnableComponent {
+public class BitrepositoryIngesterComponent extends SBOIBasedAbstractRunnableComponent {
     private final Logger log = LoggerFactory.getLogger(getClass());
     public static final String COLLECTIONID_PROPERTY="bitrepository.ingester.collectionid";
     public static final String COMPONENTID_PROPERTY="bitrepository.ingester.componentid";

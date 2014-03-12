@@ -43,6 +43,11 @@
       <artifactId>autonomous-component</artifactId>
       <version>1.6-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <groupId>dk.statsbiblioteket.newspaper</groupId>
+      <artifactId>doms-event-client</artifactId>
+      <version>1.6-SNAPSHOT</version>
+    </dependency>
 
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -71,16 +76,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifest>
-              <mainClass>dk.statsbiblioteket.newspaper.BatchStructureCheckerExecutable</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
