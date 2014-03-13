@@ -5,9 +5,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import dk.statsbiblioteket.medieplatform.autonomous.AutonomousComponentUtils;
+import dk.statsbiblioteket.medieplatform.autonomous.SBOIDomsAutonomousComponentUtils;
 import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
 import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,7 @@ public class BitrepositoryIngesterExecutable {
      * @param args the arguments.
      *
      * @throws Exception
-     * @see AutonomousComponentUtils#parseArgs(String[])
+     * @see SBOIDomsAutonomousComponentUtils#parseArgs(String[])
      */
     public static void main(String... args) throws IOException {
         System.exit(doMain(args));
@@ -33,14 +34,14 @@ public class BitrepositoryIngesterExecutable {
      * @param args the arguments.
      *
      * @throws Exception
-     * @see dk.statsbiblioteket.medieplatform.autonomous.AutonomousComponentUtils#parseArgs(String[])
+     * @see SBOIDomsAutonomousComponentUtils#parseArgs(String[])
      */
     public static int doMain(String[] args) throws IOException {
         log.info("Starting with args {}", args);
         Properties properties = parseArgs(args);
         RunnableComponent component = new BitrepositoryIngesterComponent(properties);
 
-        CallResult result = AutonomousComponentUtils.startAutonomousComponent(properties, component);
+        CallResult result = SBOIDomsAutonomousComponentUtils.startAutonomousComponent(properties, component);
         log.debug("result was: " + result);
         return result.containsFailures();
         
