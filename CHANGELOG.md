@@ -1,5 +1,7 @@
 ### 1.4
-* Update to newspaper-parent 1.1
+* Update to newspaper-parent 1.2
+* Update to version 1.2 of bitrepository reference code
+* Update to version 1.6 of batch event framework dependencies
 
 ### 1.3.1
 * Update to newspaper-batch-event-framework 1.4.4, to make the component respect a maximum of reported failures
