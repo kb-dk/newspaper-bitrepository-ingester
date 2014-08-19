@@ -29,25 +29,24 @@ public class DomsJP2FileUrlRegister {
      * @param url The url to where the file content can be resolved. 
      * @param checksum The checksum of the data 
      * @throws DomsObjectNotFoundException when there's either too many objects found or non at all.
+     * @throws BackendMethodFailedException 
+     * @throws BackendInvalidCredsException 
+     * @throws BackendInvalidResourceException 
      */
-    public void registerJp2File(String path, String filename, String url, String checksum) throws DomsObjectNotFoundException {
+    public void registerJp2File(String path, String filename, String url, String checksum) throws DomsObjectNotFoundException, BackendInvalidCredsException, BackendMethodFailedException, BackendInvalidResourceException {
         List<String> objects;
-        try {
-            objects = enhancedFedora.findObjectFromDCIdentifier(path);
+        objects = enhancedFedora.findObjectFromDCIdentifier(path);
 
-            if(objects.size() != 1) {
-                throw new DomsObjectNotFoundException("Expected excatly 1 identifier from DOMS, got " + objects.size()
-                        + " for object with DCIdentifier: '" + path + "'. Don't know where to add file.");
-            }
-            String fileObjectPid = objects.get(0);
-            enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, filename, url, "application/octet-stream", 
-                    JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
-            enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
-                    checksum, true, "Adding file after bitrepository ingest");
-        } catch (BackendInvalidCredsException | BackendMethodFailedException | BackendInvalidResourceException e) {
-            throw new RuntimeException(e.getMessage(), e); 
+        if(objects.size() != 1) {
+            throw new DomsObjectNotFoundException("Expected excatly 1 identifier from DOMS, got " + objects.size()
+                    + " for object with DCIdentifier: '" + path + "'. Don't know where to add file.");
         }
-        
+        String fileObjectPid = objects.get(0);
+        enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, filename, url, "application/octet-stream", 
+                JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
+        enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
+                checksum, true, "Adding file after bitrepository ingest");
+    
     }
 
 }

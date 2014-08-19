@@ -40,7 +40,7 @@ public class DomsJP2FileUrlRegisterTest {
     }
     
     @Test
-    public void multiplePidTest() throws BackendInvalidCredsException, BackendMethodFailedException {
+    public void multiplePidTest() throws BackendInvalidCredsException, BackendMethodFailedException, BackendInvalidResourceException {
         EnhancedFedora mockCentral = mock(EnhancedFedora.class);
         String TEST_PID_A = "pidA";
         String TEST_PID_B = "pidA";

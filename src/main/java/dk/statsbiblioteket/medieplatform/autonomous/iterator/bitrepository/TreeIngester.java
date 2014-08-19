@@ -9,6 +9,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.jms.JMSException;
 
+import dk.statsbiblioteket.doms.central.connectors.BackendInvalidCredsException;
+import dk.statsbiblioteket.doms.central.connectors.BackendInvalidResourceException;
+import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegister;
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsObjectNotFoundException;
@@ -138,8 +141,13 @@ public class TreeIngester {
                     resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(),
                             "Could not find the proper DOMS object to register the ingested file to: " + e.toString(),
                             Strings.getStackTrace(e));
+                } catch (BackendInvalidCredsException |BackendMethodFailedException | BackendInvalidResourceException e) {
+                    resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(),
+                            "Failed to update DOMS object with the ingested file: " + e.toString(),
+                            Strings.getStackTrace(e));
                 }
                 operationLimiter.removeJob(job);
+                
                 
             } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
                 PutJob job = getJob(event);
@@ -189,6 +197,10 @@ public class TreeIngester {
         }
         
         String getPath() {
+            return path;
+        }
+        
+        public String toString() {
             return path;
         }
     }
