@@ -138,13 +138,13 @@ public class TreeIngester {
                 try {
                     urlRegister.registerJp2File(job.getPath(), job.getFileID(), url, job.getChecksum());
                 } catch (DomsObjectNotFoundException e) {
-                    resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(),
-                            "Could not find the proper DOMS object to register the ingested file to: " + e.toString(),
-                            Strings.getStackTrace(e));
-                } catch (BackendInvalidCredsException |BackendMethodFailedException | BackendInvalidResourceException e) {
-                    resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(),
-                            "Failed to update DOMS object with the ingested file: " + e.toString(),
-                            Strings.getStackTrace(e));
+                    log.error("Failed to find the proper object in DOMS", e);
+                    resultCollector.addFailure(event.getFileID(), "exception", getClass().getSimpleName(),
+                            "Could not find the proper DOMS object to register the ingested file to: " + e.toString());
+                } catch (Exception e) {
+                    log.error("Failed to register the url in DOMS", e);
+                    resultCollector.addFailure(event.getFileID(), "exception", getClass().getSimpleName(),
+                            "Failed to update DOMS object with the ingested file: " + e.toString());
                 }
                 operationLimiter.removeJob(job);
                 
@@ -164,7 +164,7 @@ public class TreeIngester {
                 }
                 String failureDetails = "Failed conversation '" + event.getConversationID() 
                         + "' with reason: '" + event.getInfo() + "' for components: " +components;
-                resultCollector.addFailure(event.getFileID(), "ingest", getClass().getSimpleName(), failureDetails);
+                resultCollector.addFailure(event.getFileID(), "jp2file", getClass().getSimpleName(), failureDetails);
                 operationLimiter.removeJob(job);
             }
         }
