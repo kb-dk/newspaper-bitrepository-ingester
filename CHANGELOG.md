@@ -1,3 +1,7 @@
+### 1.5
+* Update to version 1.3 of bitrepository reference code
+* Update to version 1.10 of batch event framework dependencies
+
 ### 1.4
 * Update to newspaper-parent 1.2
 * Update to version 1.2 of bitrepository reference code
