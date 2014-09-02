@@ -2,7 +2,6 @@
 
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
       <prudent>true</prudent>
-      <file>logs/client.log</file>
           <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
                 <!-- daily rollover -->
       <fileNamePattern>logs/client.%d{yyyy-MM-dd}.log</fileNamePattern>
