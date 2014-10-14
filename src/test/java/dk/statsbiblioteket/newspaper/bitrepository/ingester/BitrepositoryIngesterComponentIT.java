@@ -33,7 +33,7 @@ public class BitrepositoryIngesterComponentIT {
         batch.setBatchID(TEST_BATCH_ID);
         batch.setRoundTripNumber(1);
 
-        bitrepositoryIngesterComponent.doWorkOnBatch(batch, resultCollector);
+        bitrepositoryIngesterComponent.doWorkOnItem(batch, resultCollector);
     }
 
     /**
@@ -52,7 +52,7 @@ public class BitrepositoryIngesterComponentIT {
         batch.setBatchID(TEST_BATCH_ID);
         batch.setRoundTripNumber(1);
 
-        bitrepositoryIngesterComponent.doWorkOnBatch(batch, resultCollector);
+        bitrepositoryIngesterComponent.doWorkOnItem(batch, resultCollector);
         
         assertFalse(resultCollector.isSuccess());
         resultCollector.toReport().contains("Failed to force batch online.");
@@ -73,7 +73,7 @@ public class BitrepositoryIngesterComponentIT {
         batch.setBatchID(TEST_BATCH_ID);
         batch.setRoundTripNumber(1);
 
-        bitrepositoryIngesterComponent.doWorkOnBatch(batch, resultCollector);
+        bitrepositoryIngesterComponent.doWorkOnItem(batch, resultCollector);
     }
 
     private class StubbedBitrepositoryIngesterComponent extends BitrepositoryIngesterComponent {

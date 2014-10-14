@@ -62,7 +62,7 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
      * Ingests all the jp2 files for the indicated batch into the configured bit repository the indicated batch.
      */
     @Override
-    public void doWorkOnBatch(Batch batch, ResultCollector resultCollector) throws Exception {
+    public void doWorkOnItem(Batch batch, ResultCollector resultCollector) throws Exception {
         IngesterConfiguration configuration = new IngesterConfiguration(
                 getProperties().getProperty(COMPONENTID_PROPERTY),
                 getProperties().getProperty(COLLECTIONID_PROPERTY),
