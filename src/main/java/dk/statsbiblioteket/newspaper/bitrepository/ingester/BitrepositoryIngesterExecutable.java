@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
 import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
 import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
@@ -40,9 +41,9 @@ public class BitrepositoryIngesterExecutable {
     public static int doMain(String[] args) throws IOException {
         log.info("Starting with args {}", args);
         Properties properties = parseArgs(args);
-        RunnableComponent component = new BitrepositoryIngesterComponent(properties);
+        RunnableComponent<Batch> component = new BitrepositoryIngesterComponent(properties);
 
-        CallResult result = NewspaperBatchAutonomousComponentUtils.startAutonomousComponent(properties, component);
+        CallResult<Batch> result = NewspaperBatchAutonomousComponentUtils.startAutonomousComponent(properties, component);
         log.debug("result was: " + result);
         return result.containsFailures();
         
