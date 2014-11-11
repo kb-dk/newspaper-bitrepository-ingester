@@ -1,3 +1,6 @@
+### 1.6
+* Use newest version of item event framework. No functional changes for this module.
+
 ### 1.5
 * Update to version 1.3 of bitrepository reference code
 * Update to version 1.10 of batch event framework dependencies
