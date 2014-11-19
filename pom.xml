@@ -96,6 +96,6 @@
     </plugins>
   </build>
   <properties>
-    <batch-framework-version>2.0</batch-framework-version>
+    <batch-framework-version>2.1-SNAPSHOT</batch-framework-version>
   </properties>
 </project>
