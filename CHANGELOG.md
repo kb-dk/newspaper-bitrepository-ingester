@@ -1,3 +1,6 @@
+### 1.7
+* Added trace logging for detailing time spend on registering files in doms
+
 ### 1.6
 * Use newest version of item event framework. No functional changes for this module.
 * Configuration has been extended and changed and example config has been updated. Please update your configuration files.
