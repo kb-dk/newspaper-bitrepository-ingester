@@ -15,6 +15,7 @@ import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.common.utils.CalendarUtils;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.Mockito.timeout;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -75,13 +76,12 @@ public class TreeIngesterTest {
         //We need to run the ingest in a separate thread, as it will block.
         Thread t = new Thread(new TreeIngestRunner());
         t.start();
-        Thread.sleep(100);
 
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
-        verify(putFileClient).putFile(
+        verify(putFileClient, timeout(3000).times(1)).putFile(
                 eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
-        verify(putFileClient).putFile(
+        verify(putFileClient, timeout(3000).times(1)).putFile(
                 eq(TEST_COLLECTION_ID), eq(secondFile.getUrl()), eq(secondFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
         verifyNoMoreInteractions(putFileClient);
@@ -89,16 +89,14 @@ public class TreeIngesterTest {
         CompleteEvent firstFileComplete = new CompleteEvent(TEST_COLLECTION_ID, null);
         firstFileComplete.setFileID(firstFile.getFileID());
         eventHandlerCaptor.getValue().handleEvent(firstFileComplete);
-        Thread.sleep(100);
-        verify(putFileClient).putFile(
+        verify(putFileClient, timeout(3000).times(1)).putFile(
                 eq(TEST_COLLECTION_ID), eq(thirdFile.getUrl()), eq(thirdFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
 
         CompleteEvent secondFileComplete = new CompleteEvent(TEST_COLLECTION_ID, null);
         secondFileComplete.setFileID(secondFile.getFileID());
         eventHandlerCaptor.getValue().handleEvent(secondFileComplete);
-        Thread.sleep(100);
-        verify(putFileClient).putFile(
+        verify(putFileClient, timeout(3000).times(1)).putFile(
                 eq(TEST_COLLECTION_ID), eq(fourthFile.getUrl()), eq(fourthFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
     }
@@ -124,10 +122,9 @@ public class TreeIngesterTest {
         TreeIngestRunner runner = new TreeIngestRunner();
         Thread t = new Thread(runner);
         t.start();
-        Thread.sleep(100);
 
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
-        verify(putFileClient).putFile(
+        verify(putFileClient, timeout(3000).times(1)).putFile(
                 eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
         Thread.sleep(1000);
@@ -161,10 +158,9 @@ public class TreeIngesterTest {
         TreeIngestRunner runner = new TreeIngestRunner();
         Thread t = new Thread(runner);
         t.start();
-        Thread.sleep(100);
 
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
-        verify(putFileClient).putFile(
+        verify(putFileClient, timeout(3000).times(1)).putFile(
                 eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
         Thread.sleep(500);
