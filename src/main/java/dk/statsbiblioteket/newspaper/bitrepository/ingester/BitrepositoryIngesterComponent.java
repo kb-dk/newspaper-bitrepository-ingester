@@ -140,8 +140,6 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                     ingesterConfig.getDomsUrl(),
                     ingesterConfig.getPidgeneratorurl(), null,
                     ingesterConfig.getFedoraRetries(),
-                    ingesterConfig.getFedoraRetries(),
-                    ingesterConfig.getFedoraRetries(),
                     ingesterConfig.getDelayBetweenFedoraRetries()
             );
             return fedora;
