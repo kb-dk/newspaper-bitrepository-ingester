@@ -12,11 +12,13 @@ public class IngesterConfiguration {
     private final String bitmagBaseUrl;
     private final String forceOnlineCommand;
     private final String pidgeneratorurl;
+    private final int fedoraRetries;
+    private final int delayBetweenFedoraRetries;
 
     public IngesterConfiguration(String componentID, String collectionID, String settingsDir,
                                  String certificateLocation, int maxNumberOfParallelPuts, String domsUrl,
                                  String domsUser, String domsPass, String bitmagBaseUrl, String forceOnlineCommand,
-                                 String pidgeneratorurl) {
+                                 String pidgeneratorurl, int fedoraRetries, int delayBetweenFedoraRetries) {
         this.componentID = componentID;
         this.collectionID = collectionID;
         SettingsDir = settingsDir;
@@ -28,6 +30,8 @@ public class IngesterConfiguration {
         this.bitmagBaseUrl = bitmagBaseUrl;
         this.forceOnlineCommand = forceOnlineCommand;
         this.pidgeneratorurl = pidgeneratorurl;
+        this.fedoraRetries = fedoraRetries;
+        this.delayBetweenFedoraRetries = delayBetweenFedoraRetries;
     }
 
     public String getComponentID() {
@@ -72,5 +76,13 @@ public class IngesterConfiguration {
 
     public String getPidgeneratorurl() {
         return pidgeneratorurl;
+    }
+
+    public int getFedoraRetries() {
+        return fedoraRetries;
+    }
+
+    public int getDelayBetweenFedoraRetries() {
+        return delayBetweenFedoraRetries;
     }
 }

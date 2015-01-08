@@ -74,7 +74,9 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                 getProperties().getProperty(ConfigConstants.DOMS_PASSWORD),
                 getProperties().getProperty(BITMAG_BASEURL_PROPERTY), 
                 getProperties().getProperty(FORCE_ONLINE_COMMAND),
-                getProperties().getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL));
+                getProperties().getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL),
+                Integer.parseInt(getProperties().getProperty(ConfigConstants.FEDORA_RETRIES, "1")),
+                Integer.parseInt(getProperties().getProperty(ConfigConstants.FEDORA_DELAY_BETWEEN_RETRIES, "100")));
         Settings settings = loadSettings(configuration);
         
         if(!forceOnline(batch, configuration)) {
@@ -136,7 +138,12 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
             EnhancedFedoraImpl fedora = new EnhancedFedoraImpl(
                     creds,
                     ingesterConfig.getDomsUrl(),
-                    ingesterConfig.getPidgeneratorurl(), null);
+                    ingesterConfig.getPidgeneratorurl(), null,
+                    ingesterConfig.getFedoraRetries(),
+                    ingesterConfig.getFedoraRetries(),
+                    ingesterConfig.getFedoraRetries(),
+                    ingesterConfig.getDelayBetweenFedoraRetries()
+            );
             return fedora;
         } catch (MalformedURLException | PIDGeneratorException | JAXBException e) {
             throw new RuntimeException("Failed to get a connection to DOMS.", e);
