@@ -17,6 +17,7 @@
         </encoder>
     </appender>
     <logger name="dk.statsbibliokeket" level="INFO"/>
+    <logger name="org.bitrepository" level="INFO"/>
     <root level="WARN">
         <appender-ref ref="FILE"/>
     </root>
