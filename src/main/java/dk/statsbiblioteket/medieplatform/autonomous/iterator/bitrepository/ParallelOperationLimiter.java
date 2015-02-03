@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ParallelOperationLimiter {
     private final Logger log = LoggerFactory.getLogger(getClass());
-	private final BlockingQueue<PutJob> activeOperations;
+    private final BlockingQueue<PutJob> activeOperations;
     private final int secondsToWaitForFinish;
 
     public ParallelOperationLimiter(int limit, int timeToWaitForFinish) {

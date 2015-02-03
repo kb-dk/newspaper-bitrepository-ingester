@@ -24,24 +24,24 @@ public class DomsJP2FileUrlRegister {
     public static final String JP2_MIMETYPE = "image/jp2";
     public static final String RELATION_PREDICATE = "http://doms.statsbiblioteket.dk/relations/default/0/1/#hasMD5";
     public static final String CONTENTS = "CONTENTS";
-    
+
     private EnhancedFedora enhancedFedora;
     private final String baseUrl;
     private final ResultCollector resultCollector;
     private final ExecutorService pool;
-    
+
     public DomsJP2FileUrlRegister(EnhancedFedora central, String baseUrl, ResultCollector resultCollector, int maxThreads) {
         this.enhancedFedora = central;
         this.baseUrl = baseUrl;
         this.resultCollector = resultCollector;
         this.pool = Executors.newFixedThreadPool(maxThreads);
     }
-    
+
     public void waitForFinish() throws InterruptedException {
-    	pool.shutdown();
-    	pool.awaitTermination(3600, TimeUnit.SECONDS);
+        pool.shutdown();
+        pool.awaitTermination(3600, TimeUnit.SECONDS);
     }
-    
+
     /**
      * Register the location of a file in the doms object identified by path. 
      * @param path The path identifying the DOMS object to register the file content to
@@ -53,56 +53,56 @@ public class DomsJP2FileUrlRegister {
      * @throws BackendInvalidCredsException 
      * @throws BackendInvalidResourceException 
      */
-    public void registerJp2File(PutJob job) {/*String path, String filename, String url, String checksum) throws DomsObjectNotFoundException, BackendInvalidCredsException, BackendMethodFailedException, BackendInvalidResourceException {*/
+    public void registerJp2File(PutJob job) {
         pool.submit(new RegistrationTask(job));
     }
-    
+
     private class RegistrationTask implements Runnable {
-    	private final PutJob job;
-    	
-    	public RegistrationTask(PutJob job) {
-    		this.job = job;
-		}
-    	
-		@Override
-		public void run() {
-			try {
-				register();
-			} catch (DomsObjectNotFoundException e) {
-				log.error("Failed to find the proper object in DOMS", e);
+        private final PutJob job;
+
+        public RegistrationTask(PutJob job) {
+            this.job = job;
+        }
+
+        @Override
+        public void run() {
+            try {
+                register();
+            } catch (DomsObjectNotFoundException e) {
+                log.error("Failed to find the proper object in DOMS", e);
                 resultCollector.addFailure(job.getFileID(), "exception", getClass().getSimpleName(),
                         "Could not find the proper DOMS object to register the ingested file to: " + e.toString());
-			} catch (Exception e) {
-				log.error("Failed to register the url in DOMS", e);
+            } catch (Exception e) {
+                log.error("Failed to register the url in DOMS", e);
                 resultCollector.addFailure(job.getFileID(), "exception", getClass().getSimpleName(),
                         "Failed to update DOMS object with the ingested file: " + e.toString());
-			}
-		}
-		
-		private void register() throws DomsObjectNotFoundException, Exception {
-			List<String> objects;
-	        Date start = new Date();
-	        objects = enhancedFedora.findObjectFromDCIdentifier(job.getPath());
-	        Date objFound = new Date();
-	        log.trace("It took {} ms to find object in doms for path '{}'", objFound.getTime() - start.getTime(), job.getPath());
-	        if(objects.size() != 1) {
-	            throw new DomsObjectNotFoundException("Expected excatly 1 identifier from DOMS, got " + objects.size()
-	                    + " for object with DCIdentifier: '" + job.getPath() + "'. Don't know where to add file.");
-	        }
-	        String fileObjectPid = objects.get(0);
-	        String url = baseUrl + job.getFileID();
-	        enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, job.getFileID(), url, "application/octet-stream", 
-	                JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
-	        Date dsAdded = new Date();
-	        log.trace("It took {} ms to add external datastream to doms for path '{}'", dsAdded.getTime() - objFound.getTime(), job.getPath());
-	        enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
-	                job.getChecksum(), true, "Adding file after bitrepository ingest");
-	        Date finished = new Date();
-	        log.trace("It took {} ms to add relation in doms for path '{}'", finished.getTime() - dsAdded.getTime(), job.getPath());
-	        log.trace("In total it took {} ms to register file in doms for path '{}'", finished.getTime() - start.getTime(), job.getPath());
-	        
-		}
-    	
+            }
+        }
+
+        private void register() throws DomsObjectNotFoundException, Exception {
+            List<String> objects;
+            Date start = new Date();
+            objects = enhancedFedora.findObjectFromDCIdentifier(job.getPath());
+            Date objFound = new Date();
+            log.trace("It took {} ms to find object in doms for path '{}'", objFound.getTime() - start.getTime(), job.getPath());
+            if(objects.size() != 1) {
+                throw new DomsObjectNotFoundException("Expected excatly 1 identifier from DOMS, got " + objects.size()
+                        + " for object with DCIdentifier: '" + job.getPath() + "'. Don't know where to add file.");
+            }
+            String fileObjectPid = objects.get(0);
+            String url = baseUrl + job.getFileID();
+            enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, job.getFileID(), url, "application/octet-stream", 
+                    JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
+            Date dsAdded = new Date();
+            log.trace("It took {} ms to add external datastream to doms for path '{}'", dsAdded.getTime() - objFound.getTime(), job.getPath());
+            enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
+                    job.getChecksum(), true, "Adding file after bitrepository ingest");
+            Date finished = new Date();
+            log.trace("It took {} ms to add relation in doms for path '{}'", finished.getTime() - dsAdded.getTime(), job.getPath());
+            log.trace("In total it took {} ms to register file in doms for path '{}'", finished.getTime() - start.getTime(), job.getPath());
+
+        }
+
     }
 
 }

@@ -53,7 +53,7 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
     public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
     public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
     public static final int ONE_HOUR = 3600;
-    
+
     public BitrepositoryIngesterComponent(Properties properties) {
         super(properties);
     }
@@ -83,42 +83,42 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                 Integer.parseInt(getProperties().getProperty(ConfigConstants.FEDORA_RETRIES, "1")),
                 Integer.parseInt(getProperties().getProperty(ConfigConstants.FEDORA_DELAY_BETWEEN_RETRIES, "100")));
         Settings settings = loadSettings(configuration);
-        
+
         if(!forceOnline(batch, configuration)) {
             resultCollector.addFailure(batch.getFullID(), "ingest", getClass().getSimpleName(), 
                     "Failed to force batch online. Skipping ingest of batch");
             return;
         }
-        
+
         ParallelOperationLimiter parallelOperationLimiter = new ParallelOperationLimiter(
-        		configuration.getMaxNumberOfParallelPuts(),
-        		(int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000));
-        
+                configuration.getMaxNumberOfParallelPuts(),
+                (int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000));
+
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         int maxThreads = Integer.parseInt(getProperties().getProperty(ConfigConstants.THREADS_PER_BATCH, "1"));
         DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration), 
-        		configuration.getBitmagBaseUrl(), resultCollector, maxThreads);
+                configuration.getBitmagBaseUrl(), resultCollector, maxThreads);
         TreeIngester ingester = new TreeIngester(configuration.getCollectionID(), 
-        		parallelOperationLimiter, 
-        		urlRegister, 
-        		new BatchImageLocator(createIterator(batch), getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
-        		ingestClient,
-        		resultCollector);
+                parallelOperationLimiter, 
+                urlRegister, 
+                new BatchImageLocator(createIterator(batch), getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
+                ingestClient,
+                resultCollector);
         log.info("Starting ingest of batch '" + batch.getFullID() + "'");
-        
+
         try {
-        	ingester.performIngest();
+            ingester.performIngest();
             urlRegister.waitForFinish();
         } catch (NotFinishedException e) {
-			Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
-			for (PutJob job : unfinishedJobs.toArray(new PutJob[unfinishedJobs.size()])) {
+            Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
+            for (PutJob job : unfinishedJobs.toArray(new PutJob[unfinishedJobs.size()])) {
                 resultCollector.addFailure(job.getFileID(), "ingest", getClass().getSimpleName(),
                         "Timeout waiting for last files to be ingested.");
             }
-		} finally {
-			ingester.shutdown();	
-		}
-        
+        } finally {
+            ingester.shutdown();	
+        }
+
         log.info("Finished ingest of batch '" + batch.getFullID() + "'");
     }
 
@@ -134,7 +134,7 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
         List<String> command = new ArrayList<String>();
         command.add(forceOnlineCommand);
         command.add(batch.getFullID());
-        
+
         int exitCode = -1;
         try {
             Process forceOnlineProcess = new ProcessBuilder(command).start();
@@ -148,10 +148,10 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
         } catch (InterruptedException e) {
             log.error("Was interrupted while calling forceOnline command. Command was: '" + command.toString() + "'.");
         }
-        
+
         return success;
     }
-    
+
     protected EnhancedFedora createEnhancedFedora(IngesterConfiguration ingesterConfig) {
         Credentials creds = new Credentials(ingesterConfig.getDomsUser(), ingesterConfig.getDomsPass());
         try {
@@ -161,13 +161,13 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                     ingesterConfig.getPidgeneratorurl(), null,
                     ingesterConfig.getFedoraRetries(),
                     ingesterConfig.getDelayBetweenFedoraRetries()
-            );
+                    );
             return fedora;
         } catch (MalformedURLException | PIDGeneratorException | JAXBException e) {
             throw new RuntimeException("Failed to get a connection to DOMS.", e);
         }
     }
-    
+
     /**
      * Creates a default put file client. May be overridden by specialized BitrepositoryIngesterComponents.
      */
@@ -178,8 +178,8 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
         OperationAuthorizor authorizer = new BasicOperationAuthorizor(permissionStore);
         org.bitrepository.protocol.security.SecurityManager securityManager =
                 new BasicSecurityManager(settings.getRepositorySettings(),
-                configuration.getCertificateLocation(),
-                authenticator, signer, authorizer, permissionStore, getProperties().getProperty(COMPONENTID_PROPERTY));
+                        configuration.getCertificateLocation(),
+                        authenticator, signer, authorizer, permissionStore, getProperties().getProperty(COMPONENTID_PROPERTY));
         return ModifyComponentFactory.getInstance().retrievePutClient(
                 settings, securityManager,
                 getProperties().getProperty(COMPONENTID_PROPERTY));

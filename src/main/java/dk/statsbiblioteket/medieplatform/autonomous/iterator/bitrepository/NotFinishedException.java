@@ -7,13 +7,13 @@ import java.util.Collection;
  */
 public class NotFinishedException extends Exception {
 
-	private Collection<PutJob> unfinishedJobs;
-	
-	public NotFinishedException(Collection<PutJob> unfinishedJobs) {
-		this.unfinishedJobs = unfinishedJobs;
-	}
-	
-	public Collection<PutJob> getUnfinishedJobs() {
-		return unfinishedJobs;
-	}
+    private Collection<PutJob> unfinishedJobs;
+
+    public NotFinishedException(Collection<PutJob> unfinishedJobs) {
+        this.unfinishedJobs = unfinishedJobs;
+    }
+
+    public Collection<PutJob> getUnfinishedJobs() {
+        return unfinishedJobs;
+    }
 }

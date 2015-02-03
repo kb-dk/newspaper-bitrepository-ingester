@@ -24,7 +24,7 @@ public class TreeIngester {
     private final EventHandler handler;
     private final ParallelOperationLimiter parallelOperationLimiter;
     private final PutFileClient putFileClient;
-  
+
     /**
      *
      * @param collectionID The collectionID of the collection to store the ingested files in.
@@ -36,7 +36,7 @@ public class TreeIngester {
      * @param maxNumberOfParallelPuts The number of puts to to perform in parallel.
      */
     public TreeIngester(String collectionID, ParallelOperationLimiter operationLimiter, DomsJP2FileUrlRegister domsRegistor, 
-    		IngestableFileLocator fileLocator, PutFileClient putFileClient, ResultCollector resultCollector) {
+            IngestableFileLocator fileLocator, PutFileClient putFileClient, ResultCollector resultCollector) {
         this.collectionID = collectionID;
         this.fileLocator = fileLocator;
         this.parallelOperationLimiter = operationLimiter;
