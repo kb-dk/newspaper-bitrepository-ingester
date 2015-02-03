@@ -5,14 +5,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
-import dk.statsbiblioteket.medieplatform.autonomous.Batch;
-import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
-import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
-import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
-import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import dk.statsbiblioteket.medieplatform.autonomous.Batch;
+import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
+import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
 
 /** AutonomousComponent wrapper for the BitrepositoryIngester. */
 public class BitrepositoryIngesterExecutable {

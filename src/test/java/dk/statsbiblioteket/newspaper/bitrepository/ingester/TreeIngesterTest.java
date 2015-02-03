@@ -5,7 +5,11 @@ import java.net.URL;
 
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngestableFile;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.NotFinishedException;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.ParallelOperationLimiter;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.PutJob;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
+
 import org.bitrepository.bitrepositoryelements.ChecksumDataForFileTYPE;
 import org.bitrepository.bitrepositoryelements.ChecksumSpecTYPE;
 import org.bitrepository.bitrepositoryelements.ChecksumType;
@@ -15,7 +19,9 @@ import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.common.utils.CalendarUtils;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.mockito.ArgumentCaptor;
+
 import static org.mockito.Mockito.timeout;
+
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -28,12 +34,14 @@ import static org.testng.AssertJUnit.assertTrue;
 public class TreeIngesterTest {
     public final static String TEST_COLLECTION_ID = "testCollection";
     protected static final int DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS = 10;
+    protected static final int DEFAULT_TIMEOUT = 60; /*60 seconds*/
     protected static final String DEFAULT_BASEURL = "http://bitfinder.statsbiblioteket.dk/avis/";
     private BatchImageLocator fileLocator;
     private PutFileClient putFileClient;
     private ResultCollector resultCollector;
     private TreeIngester treeIngester;
     private DomsJP2FileUrlRegister urlRegister;
+    ParallelOperationLimiter operationLimiter;
 
     @BeforeMethod
     public void setupTreeIngester() {
@@ -41,13 +49,12 @@ public class TreeIngesterTest {
         putFileClient = new PutFileClientStub();
         resultCollector = mock(ResultCollector.class);
         urlRegister = mock(DomsJP2FileUrlRegister.class);
+        operationLimiter = new ParallelOperationLimiter(DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS, DEFAULT_TIMEOUT);
     }
 
     @Test
-    public void emptyTreeTest() {
-        treeIngester = new TreeIngester(
-                TEST_COLLECTION_ID, 0, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS,
-                urlRegister, DEFAULT_BASEURL);
+    public void emptyTreeTest() throws NotFinishedException {
+    	treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         treeIngester.performIngest();
     }
 
@@ -56,9 +63,8 @@ public class TreeIngesterTest {
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 2;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
-        treeIngester = new TreeIngester(
-                TEST_COLLECTION_ID, 0, fileLocator, putFileClient, resultCollector, maxNumberOfParallelPuts,
-                urlRegister, DEFAULT_BASEURL);
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts, DEFAULT_TIMEOUT);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
                         "path:First-file");
@@ -106,13 +112,13 @@ public class TreeIngesterTest {
      */
     @Test
     public void parallelPutCompletionTest() throws MalformedURLException, InterruptedException {
-        final int TIMEOUT_FOR_OPERATION = 10000;
+        final int TIMEOUT_FOR_OPERATION = 10;
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
-        treeIngester = new TreeIngester(
-                TEST_COLLECTION_ID, TIMEOUT_FOR_OPERATION, fileLocator, putFileClient, resultCollector, 
-                maxNumberOfParallelPuts, urlRegister, DEFAULT_BASEURL);
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts, TIMEOUT_FOR_OPERATION);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
                         "path:First-file");
@@ -142,13 +148,12 @@ public class TreeIngesterTest {
      */
     @Test
     public void parallelPutTimeoutTest() throws MalformedURLException, InterruptedException {
-        final int TIMEOUT_FOR_OPERATION = 1000;
+        final int TIMEOUT_FOR_OPERATION = 1;
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
-        treeIngester = new TreeIngester(
-                TEST_COLLECTION_ID, TIMEOUT_FOR_OPERATION, fileLocator, putFileClient, resultCollector, 
-                maxNumberOfParallelPuts, urlRegister, DEFAULT_BASEURL);
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts, TIMEOUT_FOR_OPERATION);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
                         "path:First-file");
@@ -184,7 +189,13 @@ public class TreeIngesterTest {
         boolean finished = false;
 
         public void run() {
-            treeIngester.performIngest();
+            try {
+				treeIngester.performIngest();
+			} catch (NotFinishedException e) {
+				for(PutJob job : e.getUnfinishedJobs()) {
+					resultCollector.addFailure(job.getFileID(), "exception", "testcase", "failed to ingest");
+				}
+			}
             finished = true;
         }
     }

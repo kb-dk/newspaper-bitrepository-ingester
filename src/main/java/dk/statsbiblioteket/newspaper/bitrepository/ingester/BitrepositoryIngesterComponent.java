@@ -3,6 +3,7 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
@@ -17,6 +18,9 @@ import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.NotFinishedException;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.ParallelOperationLimiter;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.PutJob;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
 
 import org.bitrepository.common.settings.Settings;
@@ -48,6 +52,7 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
     public static final String MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY="bitrepository.ingester.numberofparrallelPuts";
     public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
     public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
+    public static final int ONE_HOUR = 3600;
     
     public BitrepositoryIngesterComponent(Properties properties) {
         super(properties);
@@ -85,20 +90,35 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
             return;
         }
         
+        ParallelOperationLimiter parallelOperationLimiter = new ParallelOperationLimiter(
+        		configuration.getMaxNumberOfParallelPuts(),
+        		(int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000));
+        
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration));
-        TreeIngester ingester = new TreeIngester(
-                configuration.getCollectionID(),
-                settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue(),
-                new BatchImageLocator(createIterator(batch),
-                getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
-                ingestClient,
-                resultCollector, configuration.getMaxNumberOfParallelPuts(),
-                urlRegister,
-                configuration.getBitmagBaseUrl());
+        int maxThreads = Integer.parseInt(getProperties().getProperty(ConfigConstants.THREADS_PER_BATCH, "1"));
+        DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration), 
+        		configuration.getBitmagBaseUrl(), resultCollector, maxThreads);
+        TreeIngester ingester = new TreeIngester(configuration.getCollectionID(), 
+        		parallelOperationLimiter, 
+        		urlRegister, 
+        		new BatchImageLocator(createIterator(batch), getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
+        		ingestClient,
+        		resultCollector);
         log.info("Starting ingest of batch '" + batch.getFullID() + "'");
-        ingester.performIngest();
-        ingester.shutdown();
+        
+        try {
+        	ingester.performIngest();
+            urlRegister.waitForFinish();
+        } catch (NotFinishedException e) {
+			Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
+			for (PutJob job : unfinishedJobs.toArray(new PutJob[unfinishedJobs.size()])) {
+                resultCollector.addFailure(job.getFileID(), "ingest", getClass().getSimpleName(),
+                        "Timeout waiting for last files to be ingested.");
+            }
+		} finally {
+			ingester.shutdown();	
+		}
+        
         log.info("Finished ingest of batch '" + batch.getFullID() + "'");
     }
 
