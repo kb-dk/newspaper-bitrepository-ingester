@@ -1,3 +1,6 @@
+### 1.8
+* Seperated the action of registering a file in doms from the put operations
+
 ### 1.7
 * Added trace logging for detailing time spend on registering files in doms
 
