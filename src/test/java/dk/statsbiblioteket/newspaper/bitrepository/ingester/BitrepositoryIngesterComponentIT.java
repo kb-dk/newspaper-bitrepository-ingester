@@ -42,7 +42,7 @@ public class BitrepositoryIngesterComponentIT {
     @Test(groups = "integrationTest")
     public void forceOnlineFailure() throws Exception {
         properties.setProperty(ConfigConstants.ITERATOR_FILESYSTEM_BATCHES_FOLDER, pathToTestBatch + "/" + "small-test-batch");
-        properties.setProperty(BitrepositoryIngesterComponent.FORCE_ONLINE_COMMAND, "false");
+        properties.setProperty(IngesterConfiguration.FORCE_ONLINE_COMMAND, "false");
         
         BitrepositoryIngesterComponent bitrepositoryIngesterComponent =
                 new StubbedBitrepositoryIngesterComponent(properties);
@@ -101,6 +101,6 @@ public class BitrepositoryIngesterComponentIT {
         pathToConfig = propertiesDir + "/newspaper-bitrepository-ingester-config";
         pathToTestBatch = System.getProperty("integration.test.newspaper.testdata");
         properties.load(new FileInputStream(pathToConfig + "/config.properties"));
-        properties.setProperty(BitrepositoryIngesterComponent.SETTINGS_DIR_PROPERTY, pathToConfig);
+        properties.setProperty(IngesterConfiguration.SETTINGS_DIR_PROPERTY, pathToConfig);
     }
 }

@@ -17,12 +17,12 @@ public class PutFileEventHandler implements EventHandler {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final ParallelOperationLimiter operationLimiter;
-    private final DomsJP2FileUrlRegister domsRegistor;
+    private final DomsJP2FileUrlRegister domsRegister;
     private final ResultCollector resultCollector;
     
-    public PutFileEventHandler(ParallelOperationLimiter putLimiter, DomsJP2FileUrlRegister domsRegistor, ResultCollector resultCollector) {
+    public PutFileEventHandler(ParallelOperationLimiter putLimiter, DomsJP2FileUrlRegister domsRegister, ResultCollector resultCollector) {
     	this.operationLimiter = putLimiter;
-        this.domsRegistor = domsRegistor;
+        this.domsRegister = domsRegister;
         this.resultCollector = resultCollector;
     }
 
@@ -30,26 +30,30 @@ public class PutFileEventHandler implements EventHandler {
     public void handleEvent(OperationEvent event) {
         if (event.getEventType().equals(OperationEvent.OperationEventType.COMPLETE)) {
             PutJob job = getJob(event);
-            log.debug("Completed ingest of file " + event.getFileID());
-            domsRegistor.registerJp2File(job);
-            operationLimiter.removeJob(job);
+            if(job != null) {
+                log.debug("Completed ingest of file " + event.getFileID());
+                domsRegister.registerJp2File(job);
+                operationLimiter.removeJob(job);
+            }
         } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
             PutJob job = getJob(event);
-            log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event);
-            List<String> components = new ArrayList<String>();
-            if(event instanceof OperationFailedEvent) {
-                OperationFailedEvent opEvent = (OperationFailedEvent) event;
-                List<ContributorEvent> events = opEvent.getComponentResults();
-                for(ContributorEvent e : events) {
-                    if(e.getEventType().equals(OperationEvent.OperationEventType.COMPONENT_FAILED)) {
-                        components.add(e.getContributorID());
+            if(job != null) {
+                log.warn("Failed to ingest file " + event.getFileID() + ", Cause: " + event);
+                List<String> components = new ArrayList<String>();
+                if(event instanceof OperationFailedEvent) {
+                    OperationFailedEvent opEvent = (OperationFailedEvent) event;
+                    List<ContributorEvent> events = opEvent.getComponentResults();
+                    for(ContributorEvent e : events) {
+                        if(e.getEventType().equals(OperationEvent.OperationEventType.COMPONENT_FAILED)) {
+                            components.add(e.getContributorID());
+                        }
                     }
                 }
+                String failureDetails = "Failed conversation '" + event.getConversationID() 
+                        + "' with reason: '" + event.getInfo() + "' for components: " +components;
+                resultCollector.addFailure(event.getFileID(), "jp2file", getClass().getSimpleName(), failureDetails);
+                operationLimiter.removeJob(job);
             }
-            String failureDetails = "Failed conversation '" + event.getConversationID() 
-                    + "' with reason: '" + event.getInfo() + "' for components: " +components;
-            resultCollector.addFailure(event.getFileID(), "jp2file", getClass().getSimpleName(), failureDetails);
-            operationLimiter.removeJob(job);
         }
     }
 

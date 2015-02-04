@@ -36,7 +36,7 @@ public class ParallelOperationLimiter {
     /**
      * Gets the PutJob for fileID
      * @param fileID The fileID to get the job for
-     * @return PutJob the PutJob with relevant info for the job. 
+     * @return PutJob the PutJob with relevant info for the job. May return null if no job matching fileID is found
      */
     PutJob getJob(String fileID) {
         Iterator<PutJob> iter = activeOperations.iterator();
@@ -71,9 +71,8 @@ public class ParallelOperationLimiter {
                 //No problem
             }
         }
+        // There's a theroretical chance/possiblity that activeOperations still may change here (both grow and shrink)
         if (secondsWaiting > secondsToWaitForFinish) {
-            String message = "Timeout(" + secondsToWaitForFinish+ "s) waiting for last files (" + Arrays.toString(activeOperations.toArray()) + ")to complete.";
-            log.warn(message);
             throw new NotFinishedException(activeOperations);
         }
     }

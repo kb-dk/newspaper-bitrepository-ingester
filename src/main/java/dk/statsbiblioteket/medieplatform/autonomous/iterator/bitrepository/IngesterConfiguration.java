@@ -1,6 +1,20 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
+import java.util.Properties;
+
+import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
+
 public class IngesterConfiguration {
+    public static final String COLLECTIONID_PROPERTY="bitrepository.ingester.collectionid";
+    public static final String COMPONENTID_PROPERTY="bitrepository.ingester.componentid";
+    public static final String SETTINGS_DIR_PROPERTY="bitrepository.ingester.settingsdir";
+    public static final String CERTIFICATE_PROPERTY="bitrepository.ingester.certificate";
+    public static final String URL_TO_BATCH_DIR_PROPERTY="bitrepository.ingester.urltobatchdir";
+    public static final String MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY="bitrepository.ingester.numberofparrallelPuts";
+    public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
+    public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
+    public static final String DOMS_TIMEOUT = "bitrepository.ingester.domsTimeout";
+    
     private final String componentID;
     private final String collectionID;
     private final String SettingsDir;
@@ -14,24 +28,27 @@ public class IngesterConfiguration {
     private final String pidgeneratorurl;
     private final int fedoraRetries;
     private final int delayBetweenFedoraRetries;
+    private final int maxThreads;
+    private final String urlToBatchDir;
+    private final long domsTimeout;
 
-    public IngesterConfiguration(String componentID, String collectionID, String settingsDir,
-                                 String certificateLocation, int maxNumberOfParallelPuts, String domsUrl,
-                                 String domsUser, String domsPass, String bitmagBaseUrl, String forceOnlineCommand,
-                                 String pidgeneratorurl, int fedoraRetries, int delayBetweenFedoraRetries) {
-        this.componentID = componentID;
-        this.collectionID = collectionID;
-        SettingsDir = settingsDir;
-        this.certificateLocation = certificateLocation;
-        this.maxNumberOfParallelPuts = maxNumberOfParallelPuts;
-        this.domsUrl = domsUrl;
-        this.domsUser = domsUser;
-        this.domsPass = domsPass;
-        this.bitmagBaseUrl = bitmagBaseUrl;
-        this.forceOnlineCommand = forceOnlineCommand;
-        this.pidgeneratorurl = pidgeneratorurl;
-        this.fedoraRetries = fedoraRetries;
-        this.delayBetweenFedoraRetries = delayBetweenFedoraRetries;
+    public IngesterConfiguration(Properties properties) {
+        componentID = properties.getProperty(COMPONENTID_PROPERTY);
+        collectionID = properties.getProperty(COLLECTIONID_PROPERTY);
+        SettingsDir = properties.getProperty(SETTINGS_DIR_PROPERTY);
+        certificateLocation = properties.getProperty(SETTINGS_DIR_PROPERTY) + "/" + properties.getProperty(CERTIFICATE_PROPERTY);
+        maxNumberOfParallelPuts = Integer.parseInt(properties.getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY));
+        domsUrl = properties.getProperty(ConfigConstants.DOMS_URL);
+        domsUser = properties.getProperty(ConfigConstants.DOMS_USERNAME);
+        domsPass = properties.getProperty(ConfigConstants.DOMS_PASSWORD);
+        bitmagBaseUrl = properties.getProperty(BITMAG_BASEURL_PROPERTY);
+        forceOnlineCommand = properties.getProperty(FORCE_ONLINE_COMMAND);
+        pidgeneratorurl = properties.getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL);
+        fedoraRetries = Integer.parseInt(properties.getProperty(ConfigConstants.FEDORA_RETRIES, "1"));
+        delayBetweenFedoraRetries = Integer.parseInt(properties.getProperty(ConfigConstants.FEDORA_DELAY_BETWEEN_RETRIES, "100"));
+        maxThreads = Integer.parseInt(properties.getProperty(ConfigConstants.THREADS_PER_BATCH, "1"));
+        urlToBatchDir = properties.getProperty(URL_TO_BATCH_DIR_PROPERTY);
+        domsTimeout = Long.parseLong(properties.getProperty(DOMS_TIMEOUT, "3600000"));
     }
 
     public String getComponentID() {
@@ -85,4 +102,18 @@ public class IngesterConfiguration {
     public int getDelayBetweenFedoraRetries() {
         return delayBetweenFedoraRetries;
     }
+    
+    public int getMaxThreads() {
+        return maxThreads;
+    }
+
+    public String getUrlToBatchDir() {
+        return urlToBatchDir;
+    }
+
+    public long getDomsTimeout() {
+        return domsTimeout;
+    }
+
+
 }

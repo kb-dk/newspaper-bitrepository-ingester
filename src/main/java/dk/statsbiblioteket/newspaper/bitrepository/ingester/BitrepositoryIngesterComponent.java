@@ -3,6 +3,7 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -14,7 +15,6 @@ import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
 import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
-import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
@@ -44,16 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnableComponent {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    public static final String COLLECTIONID_PROPERTY="bitrepository.ingester.collectionid";
-    public static final String COMPONENTID_PROPERTY="bitrepository.ingester.componentid";
-    public static final String SETTINGS_DIR_PROPERTY="bitrepository.ingester.settingsdir";
-    public static final String CERTIFICATE_PROPERTY="bitrepository.ingester.certificate";
-    public static final String URL_TO_BATCH_DIR_PROPERTY="bitrepository.ingester.urltobatchdir";
-    public static final String MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY="bitrepository.ingester.numberofparrallelPuts";
-    public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
-    public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
-    public static final int ONE_HOUR = 3600;
-
+    
     public BitrepositoryIngesterComponent(Properties properties) {
         super(properties);
     }
@@ -68,20 +59,7 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
      */
     @Override
     public void doWorkOnItem(Batch batch, ResultCollector resultCollector) throws Exception {
-        IngesterConfiguration configuration = new IngesterConfiguration(
-                getProperties().getProperty(COMPONENTID_PROPERTY),
-                getProperties().getProperty(COLLECTIONID_PROPERTY),
-                getProperties().getProperty(SETTINGS_DIR_PROPERTY),
-                getProperties().getProperty(SETTINGS_DIR_PROPERTY) + "/" + getProperties().getProperty(CERTIFICATE_PROPERTY),
-                Integer.parseInt(getProperties().getProperty(MAX_NUMBER_OF_PARALLEL_PUTS_PROPERTY)),
-                getProperties().getProperty(ConfigConstants.DOMS_URL),
-                getProperties().getProperty(ConfigConstants.DOMS_USERNAME),
-                getProperties().getProperty(ConfigConstants.DOMS_PASSWORD),
-                getProperties().getProperty(BITMAG_BASEURL_PROPERTY), 
-                getProperties().getProperty(FORCE_ONLINE_COMMAND),
-                getProperties().getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL),
-                Integer.parseInt(getProperties().getProperty(ConfigConstants.FEDORA_RETRIES, "1")),
-                Integer.parseInt(getProperties().getProperty(ConfigConstants.FEDORA_DELAY_BETWEEN_RETRIES, "100")));
+        IngesterConfiguration configuration = new IngesterConfiguration(getProperties());
         Settings settings = loadSettings(configuration);
 
         if(!forceOnline(batch, configuration)) {
@@ -89,29 +67,29 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                     "Failed to force batch online. Skipping ingest of batch");
             return;
         }
-
+        int maxOperationTime = (int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000); 
         ParallelOperationLimiter parallelOperationLimiter = new ParallelOperationLimiter(
-                configuration.getMaxNumberOfParallelPuts(),
-                (int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000));
+                configuration.getMaxNumberOfParallelPuts(), maxOperationTime);
 
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        int maxThreads = Integer.parseInt(getProperties().getProperty(ConfigConstants.THREADS_PER_BATCH, "1"));
         DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration), 
-                configuration.getBitmagBaseUrl(), resultCollector, maxThreads);
+                configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads());
         TreeIngester ingester = new TreeIngester(configuration.getCollectionID(), 
                 parallelOperationLimiter, 
                 urlRegister, 
-                new BatchImageLocator(createIterator(batch), getProperties().getProperty(URL_TO_BATCH_DIR_PROPERTY)),
+                new BatchImageLocator(createIterator(batch), configuration.getUrlToBatchDir()),
                 ingestClient,
                 resultCollector);
         log.info("Starting ingest of batch '" + batch.getFullID() + "'");
 
         try {
             ingester.performIngest();
-            urlRegister.waitForFinish();
+            urlRegister.waitForFinish(configuration.getDomsTimeout());
         } catch (NotFinishedException e) {
             Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
-            for (PutJob job : unfinishedJobs.toArray(new PutJob[unfinishedJobs.size()])) {
+            String message = "Timeout(" + maxOperationTime + "s) waiting for last files (" + Arrays.toString(unfinishedJobs.toArray()) + ") to complete.";
+            log.warn(message);
+            for (PutJob job : unfinishedJobs) {
                 resultCollector.addFailure(job.getFileID(), "ingest", getClass().getSimpleName(),
                         "Timeout waiting for last files to be ingested.");
             }
@@ -179,10 +157,9 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
         org.bitrepository.protocol.security.SecurityManager securityManager =
                 new BasicSecurityManager(settings.getRepositorySettings(),
                         configuration.getCertificateLocation(),
-                        authenticator, signer, authorizer, permissionStore, getProperties().getProperty(COMPONENTID_PROPERTY));
-        return ModifyComponentFactory.getInstance().retrievePutClient(
-                settings, securityManager,
-                getProperties().getProperty(COMPONENTID_PROPERTY));
+                        authenticator, signer, authorizer, permissionStore, configuration.getComponentID());
+        return ModifyComponentFactory.getInstance().retrievePutClient(settings, securityManager, 
+                configuration.getComponentID());
     }
 
     /**

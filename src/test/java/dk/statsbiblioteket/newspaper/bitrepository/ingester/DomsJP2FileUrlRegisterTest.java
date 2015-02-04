@@ -39,7 +39,7 @@ public class DomsJP2FileUrlRegisterTest {
         
         PutJob job = new PutJob(FILE_NAME, CHECKSUM, FILE_PATH);
         register.registerJp2File(job);
-        register.waitForFinish();
+        register.waitForFinish(10000);
         
         verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("CONTENTS"), eq(FILE_NAME), eq(FILE_URL),
@@ -61,7 +61,7 @@ public class DomsJP2FileUrlRegisterTest {
 
         PutJob job = new PutJob(FILE_NAME, CHECKSUM, FILE_PATH);
         register.registerJp2File(job);
-        register.waitForFinish();
+        register.waitForFinish(10000);
         
         verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verifyNoMoreInteractions(mockCentral);

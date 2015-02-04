@@ -12,6 +12,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
 import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
 import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
 
 /** AutonomousComponent wrapper for the BitrepositoryIngester. */
 public class BitrepositoryIngesterExecutable {
@@ -60,16 +61,14 @@ public class BitrepositoryIngesterExecutable {
      */
     public static Properties parseArgs(String[] args) throws IOException {
         Properties properties = new Properties(System.getProperties());
-        for (int i = 0;
-             i < args.length;
-             i++) {
+        for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.equals("-c")) {
                 String configFileName = args[i + 1];
                 properties.load(new FileInputStream(configFileName));
                 File configFile = new File(configFileName);
                 properties.setProperty(
-                        BitrepositoryIngesterComponent.SETTINGS_DIR_PROPERTY,
+                        IngesterConfiguration.SETTINGS_DIR_PROPERTY,
                         configFile.getParentFile().getAbsolutePath());
             }
         }
