@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -68,8 +69,9 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
     /**
      * Register the location of a file in the DOMS object identified by path. 
      * @param job The PutJob that containing the file that should be registered in DOMS
+     * @throws java.util.concurrent.RejectedExecutionException if the threadpool is already shutdown and just waiting for already submitted tasks to complete
      */
-    public void registerJp2File(PutJob job) {
+    public void registerJp2File(PutJob job) throws RejectedExecutionException{
         pool.submit(new RegistrationTask(job));
     }
 
@@ -81,7 +83,8 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
         } finally {
             if (!pool.isTerminated()){
                 log.error("Doms ingest of batch {} not done after '{}'. Stopping the doms ingester forcibly",batch.getFullID(),timeout);
-                resultCollector.addFailure(batch.getFullID(), "Exception",
+                resultCollector.addFailure(batch.getFullID(),
+                                                  "Exception",
                                                   getClass().getSimpleName(),
                                                   "Doms ingest not done after '" + timeout + "'. Stopping the doms ingester forcibly");
             }
@@ -106,8 +109,10 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
                         "Could not find the proper DOMS object to register the ingested file to: " + e.toString());
             } catch (Exception e) {
                 log.error("Failed to register the url for '"+job.getPath()+"' in DOMS", e);
-                resultCollector.addFailure(job.getFileID(), "exception", getClass().getSimpleName(),
-                        "Failed to update DOMS object with the ingested file: " + e.toString());
+                resultCollector.addFailure(job.getFileID(),
+                                                  "exception",
+                                                  getClass().getSimpleName(),
+                                                  "Failed to update DOMS object with the ingested file: " + e.toString());
             }
         }
 
