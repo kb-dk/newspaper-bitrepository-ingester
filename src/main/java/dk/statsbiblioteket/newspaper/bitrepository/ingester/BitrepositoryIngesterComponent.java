@@ -3,6 +3,7 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -72,7 +73,8 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
 
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
         try (DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration),
-                                                                                    configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads())){
+                                                                                    configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads(),
+                                                                                    configuration.getDomsTimeout())){
             try (TreeIngester ingester = new TreeIngester(configuration.getCollectionID(),
                                                                  parallelOperationLimiter,
                                                                  urlRegister,
@@ -83,7 +85,9 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                 ingester.performIngest();
             } catch (NotFinishedException e) {
                 Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
-                for (PutJob job : unfinishedJobs.toArray(new PutJob[unfinishedJobs.size()])) {
+                String message = "Timeout(" + maxOperationTime + "s) waiting for last files (" + Arrays.toString(unfinishedJobs.toArray()) + ") to complete.";
+                log.warn(message);
+                for (PutJob job : unfinishedJobs) {
                     resultCollector.addFailure(job.getFileID(),
                                                       "ingest",
                                                       getClass().getSimpleName(),

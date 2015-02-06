@@ -20,7 +20,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.PutJo
 /**
  * Handle the registration of the bit repository URL for a given JP2000 file in DOMS.  
  */
-public class DomsJP2FileUrlRegister implements AutoCloseable{
+public class DomsJP2FileUrlRegister implements AutoCloseable {
     private final Logger log = LoggerFactory.getLogger(getClass());
     public static final String JP2_MIMETYPE = "image/jp2";
     public static final String RELATION_PREDICATE = "http://doms.statsbiblioteket.dk/relations/default/0/1/#hasMD5";
@@ -30,25 +30,29 @@ public class DomsJP2FileUrlRegister implements AutoCloseable{
     private final String baseUrl;
     private final ResultCollector resultCollector;
     private final ExecutorService pool;
+    private long timeout;
 
     /**
      * Constructor
      * @param central The EnhancedFedora used for registering the objects in DOMS.
-     * @param baseUrl The base of the URL where the files can be accessed. 
+     * @param baseUrl The base of the URL where the files can be accessed.
      * @param resultCollector The ResultCollector in which to register failures.
-     * @param maxThreads the maximum number of threads used for registering objects in DOMS. 
+     * @param maxThreads the maximum number of threads used for registering objects in DOMS.
+     * @param timeout
      */
-    public DomsJP2FileUrlRegister(EnhancedFedora central, String baseUrl, ResultCollector resultCollector, int maxThreads) {
+    public DomsJP2FileUrlRegister(EnhancedFedora central, String baseUrl, ResultCollector resultCollector,
+                                  int maxThreads, long timeout) {
         this.enhancedFedora = central;
         this.baseUrl = baseUrl;
         this.resultCollector = resultCollector;
+        this.timeout = timeout;
 
         this.pool = Executors.newFixedThreadPool(maxThreads, new ThreadFactory() {
-            private ThreadFactory delegate = Executors.defaultThreadFactory();
+            private ThreadFactory threadFactory = Executors.defaultThreadFactory();
 
             @Override
             public Thread newThread(Runnable r) {
-                Thread thread = delegate.newThread(r);
+                Thread thread = threadFactory.newThread(r);
                 if (!thread.isDaemon()) {
                     thread.setDaemon(true);
                 }
@@ -60,7 +64,6 @@ public class DomsJP2FileUrlRegister implements AutoCloseable{
     /**
      * Register the location of a file in the DOMS object identified by path. 
      * @param job The PutJob that containing the file that should be registered in DOMS
-     * @param checksum The checksum of the data 
      */
     public void registerJp2File(PutJob job) {
         pool.submit(new RegistrationTask(job));
@@ -70,7 +73,7 @@ public class DomsJP2FileUrlRegister implements AutoCloseable{
     public void close() throws InterruptedException {
         try {
             pool.shutdown();
-            pool.awaitTermination(3600, TimeUnit.SECONDS);
+            pool.awaitTermination(timeout, TimeUnit.MILLISECONDS);
         } finally {
             pool.shutdownNow();
         }

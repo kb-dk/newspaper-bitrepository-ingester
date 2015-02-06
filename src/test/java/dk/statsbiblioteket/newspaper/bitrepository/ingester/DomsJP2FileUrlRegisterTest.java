@@ -36,7 +36,8 @@ public class DomsJP2FileUrlRegisterTest {
         String TEST_PID = "pidA";
         when(mockCentral.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(TEST_PID));
         PutJob job = new PutJob(FILE_NAME, CHECKSUM, FILE_PATH);
-        try (DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral, BASE_URL, mockResultCollector, MAX_THREADS)) {
+        try (DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral, BASE_URL, mockResultCollector, MAX_THREADS,
+                                                                                 10000)) {
             register.registerJp2File(job);
         }
 
@@ -61,7 +62,7 @@ public class DomsJP2FileUrlRegisterTest {
         try (DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral,
                                                                                  BASE_URL,
                                                                                  mockResultCollector,
-                                                                                 MAX_THREADS)) {
+                                                                                 MAX_THREADS, 10000)) {
             register.registerJp2File(job);
         }
 
