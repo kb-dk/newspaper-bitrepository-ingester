@@ -34,6 +34,7 @@ public class BitrepositoryIngesterComponentIT {
         batch.setRoundTripNumber(1);
 
         bitrepositoryIngesterComponent.doWorkOnItem(batch, resultCollector);
+        assertTrue(resultCollector.isSuccess());
     }
 
     /**
