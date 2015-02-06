@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.PutJo
 /**
  * Handle the registration of the bit repository URL for a given JP2000 file in DOMS.  
  */
-public class DomsJP2FileUrlRegister {
+public class DomsJP2FileUrlRegister implements AutoCloseable{
     private final Logger log = LoggerFactory.getLogger(getClass());
     public static final String JP2_MIMETYPE = "image/jp2";
     public static final String RELATION_PREDICATE = "http://doms.statsbiblioteket.dk/relations/default/0/1/#hasMD5";
@@ -41,16 +42,19 @@ public class DomsJP2FileUrlRegister {
         this.enhancedFedora = central;
         this.baseUrl = baseUrl;
         this.resultCollector = resultCollector;
-        this.pool = Executors.newFixedThreadPool(maxThreads);
-    }
 
-    /**
-     * Wait for the threadpool to finish, or to a timeout is reached and forcebilly shut it down 
-     */
-    public void waitForFinish(long timeout) throws InterruptedException {
-        pool.shutdown();
-        pool.awaitTermination(timeout, TimeUnit.MILLISECONDS);
-        pool.shutdownNow();
+        this.pool = Executors.newFixedThreadPool(maxThreads, new ThreadFactory() {
+            private ThreadFactory delegate = Executors.defaultThreadFactory();
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = delegate.newThread(r);
+                if (!thread.isDaemon()) {
+                    thread.setDaemon(true);
+                }
+                return thread;
+            }
+        });
     }
 
     /**
@@ -60,6 +64,16 @@ public class DomsJP2FileUrlRegister {
      */
     public void registerJp2File(PutJob job) {
         pool.submit(new RegistrationTask(job));
+    }
+
+    @Override
+    public void close() throws InterruptedException {
+        try {
+            pool.shutdown();
+            pool.awaitTermination(3600, TimeUnit.SECONDS);
+        } finally {
+            pool.shutdownNow();
+        }
     }
 
     private class RegistrationTask implements Runnable {

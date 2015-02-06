@@ -3,7 +3,6 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -69,32 +68,28 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
         }
         int maxOperationTime = (int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000); 
         ParallelOperationLimiter parallelOperationLimiter = new ParallelOperationLimiter(
-                configuration.getMaxNumberOfParallelPuts(), maxOperationTime);
+                                                                                                configuration.getMaxNumberOfParallelPuts(), maxOperationTime);
 
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration), 
-                configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads());
-        TreeIngester ingester = new TreeIngester(configuration.getCollectionID(), 
-                parallelOperationLimiter, 
-                urlRegister, 
-                new BatchImageLocator(createIterator(batch), configuration.getUrlToBatchDir()),
-                ingestClient,
-                resultCollector);
-        log.info("Starting ingest of batch '" + batch.getFullID() + "'");
-
-        try {
-            ingester.performIngest();
-            urlRegister.waitForFinish(configuration.getDomsTimeout());
-        } catch (NotFinishedException e) {
-            Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
-            String message = "Timeout(" + maxOperationTime + "s) waiting for last files (" + Arrays.toString(unfinishedJobs.toArray()) + ") to complete.";
-            log.warn(message);
-            for (PutJob job : unfinishedJobs) {
-                resultCollector.addFailure(job.getFileID(), "ingest", getClass().getSimpleName(),
-                        "Timeout waiting for last files to be ingested.");
+        try (DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration),
+                                                                                    configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads())){
+            try (TreeIngester ingester = new TreeIngester(configuration.getCollectionID(),
+                                                                 parallelOperationLimiter,
+                                                                 urlRegister,
+                                                                 new BatchImageLocator(createIterator(batch), configuration.getUrlToBatchDir()),
+                                                                 ingestClient,
+                                                                 resultCollector)) {
+                log.info("Starting ingest of batch '" + batch.getFullID() + "'");
+                ingester.performIngest();
+            } catch (NotFinishedException e) {
+                Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
+                for (PutJob job : unfinishedJobs.toArray(new PutJob[unfinishedJobs.size()])) {
+                    resultCollector.addFailure(job.getFileID(),
+                                                      "ingest",
+                                                      getClass().getSimpleName(),
+                                                      "Timeout waiting for last files to be ingested.");
+                }
             }
-        } finally {
-            ingester.shutdown();	
         }
 
         log.info("Finished ingest of batch '" + batch.getFullID() + "'");

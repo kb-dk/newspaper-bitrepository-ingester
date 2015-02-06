@@ -29,17 +29,17 @@ public class DomsJP2FileUrlRegisterTest {
     public static final String CHECKSUM = "abcd";
 
     @Test
-    public void goodCaseRegistrationTest() throws BackendInvalidCredsException, BackendMethodFailedException, 
+    public void goodCaseRegistrationTest() throws BackendInvalidCredsException, BackendMethodFailedException,
             BackendInvalidResourceException, DomsObjectNotFoundException, InterruptedException {
         EnhancedFedora mockCentral = mock(EnhancedFedora.class);
         ResultCollector mockResultCollector = mock(ResultCollector.class);
         String TEST_PID = "pidA";
         when(mockCentral.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(TEST_PID));
-        DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral, BASE_URL, mockResultCollector, MAX_THREADS);
-        
         PutJob job = new PutJob(FILE_NAME, CHECKSUM, FILE_PATH);
-        register.registerJp2File(job);
-        register.waitForFinish(10000);
+        try (DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral, BASE_URL, mockResultCollector, MAX_THREADS)) {
+            register.registerJp2File(job);
+        }
+
         
         verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verify(mockCentral).addExternalDatastream(eq(TEST_PID), eq("CONTENTS"), eq(FILE_NAME), eq(FILE_URL),
@@ -57,12 +57,14 @@ public class DomsJP2FileUrlRegisterTest {
         String TEST_PID_A = "pidA";
         String TEST_PID_B = "pidA";
         when(mockCentral.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(TEST_PID_A, TEST_PID_B));
-        DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral, BASE_URL, mockResultCollector, MAX_THREADS);
-
         PutJob job = new PutJob(FILE_NAME, CHECKSUM, FILE_PATH);
-        register.registerJp2File(job);
-        register.waitForFinish(10000);
-        
+        try (DomsJP2FileUrlRegister register = new DomsJP2FileUrlRegister(mockCentral,
+                                                                                 BASE_URL,
+                                                                                 mockResultCollector,
+                                                                                 MAX_THREADS)) {
+            register.registerJp2File(job);
+        }
+
         verify(mockCentral).findObjectFromDCIdentifier(FILE_PATH);
         verifyNoMoreInteractions(mockCentral);
         verify(mockResultCollector).addFailure(eq(job.getFileID()), eq("exception"), anyString(), anyString());

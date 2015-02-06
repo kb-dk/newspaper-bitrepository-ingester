@@ -16,7 +16,7 @@ import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegist
 /**
  * Class handling ingest of a set of files in a tree iterator structure.
  */
-public class TreeIngester {
+public class TreeIngester implements AutoCloseable{
     private final Logger log = LoggerFactory.getLogger(getClass());
     private static final long DEFAULT_FILE_SIZE = 0;
     private final IngestableFileLocator fileLocator;
@@ -78,10 +78,8 @@ public class TreeIngester {
                 ingestableFile.getChecksum(), null, handler, null);
     }
 
-    /**
-     * Method to shutdown the client properly.
-     */
-    public void shutdown() {
+    @Override
+    public void close() {
         try {
             MessageBus messageBus = MessageBusManager.getMessageBus();
             if (messageBus != null) {
