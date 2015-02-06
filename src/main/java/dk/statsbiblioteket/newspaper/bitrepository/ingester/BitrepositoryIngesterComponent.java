@@ -72,7 +72,7 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                                                                                                 configuration.getMaxNumberOfParallelPuts(), maxOperationTime);
 
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        try (DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(createEnhancedFedora(configuration),
+        try (DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(batch, createEnhancedFedora(configuration),
                                                                                     configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads(),
                                                                                     configuration.getDomsTimeout())){
             try (TreeIngester ingester = new TreeIngester(configuration.getCollectionID(),

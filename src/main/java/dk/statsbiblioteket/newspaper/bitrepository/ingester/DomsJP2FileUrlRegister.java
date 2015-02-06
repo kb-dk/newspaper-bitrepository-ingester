@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,7 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
     public static final String RELATION_PREDICATE = "http://doms.statsbiblioteket.dk/relations/default/0/1/#hasMD5";
     public static final String CONTENTS = "CONTENTS";
 
+    private final Batch batch;
     private EnhancedFedora enhancedFedora;
     private final String baseUrl;
     private final ResultCollector resultCollector;
@@ -34,14 +36,16 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
 
     /**
      * Constructor
+     * @param batch
      * @param central The EnhancedFedora used for registering the objects in DOMS.
      * @param baseUrl The base of the URL where the files can be accessed.
      * @param resultCollector The ResultCollector in which to register failures.
      * @param maxThreads the maximum number of threads used for registering objects in DOMS.
      * @param timeout
      */
-    public DomsJP2FileUrlRegister(EnhancedFedora central, String baseUrl, ResultCollector resultCollector,
+    public DomsJP2FileUrlRegister(Batch batch, EnhancedFedora central, String baseUrl, ResultCollector resultCollector,
                                   int maxThreads, long timeout) {
+        this.batch = batch;
         this.enhancedFedora = central;
         this.baseUrl = baseUrl;
         this.resultCollector = resultCollector;
@@ -75,6 +79,12 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
             pool.shutdown();
             pool.awaitTermination(timeout, TimeUnit.MILLISECONDS);
         } finally {
+            if (!pool.isTerminated()){
+                log.error("Doms ingest of batch {} not done after '{}'. Stopping the doms ingester forcibly",batch.getFullID(),timeout);
+                resultCollector.addFailure(batch.getFullID(), "Exception",
+                                                  getClass().getSimpleName(),
+                                                  "Doms ingest not done after '" + timeout + "'. Stopping the doms ingester forcibly");
+            }
             pool.shutdownNow();
         }
     }
@@ -91,11 +101,11 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
             try {
                 register();
             } catch (DomsObjectNotFoundException e) {
-                log.error("Failed to find the proper object in DOMS", e);
+                log.error("Failed to find the proper object in DOMS for '"+job.getPath()+"'", e);
                 resultCollector.addFailure(job.getFileID(), "exception", getClass().getSimpleName(),
                         "Could not find the proper DOMS object to register the ingested file to: " + e.toString());
             } catch (Exception e) {
-                log.error("Failed to register the url in DOMS", e);
+                log.error("Failed to register the url for '"+job.getPath()+"' in DOMS", e);
                 resultCollector.addFailure(job.getFileID(), "exception", getClass().getSimpleName(),
                         "Failed to update DOMS object with the ingested file: " + e.toString());
             }
@@ -110,7 +120,7 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
             Date objFound = new Date();
             log.trace("It took {} ms to find object in doms for path '{}'", objFound.getTime() - start.getTime(), path);
             if(objects.size() != 1) {
-                throw new DomsObjectNotFoundException("Expected excatly 1 identifier from DOMS, got " + objects.size()
+                throw new DomsObjectNotFoundException("Expected exactly 1 identifier from DOMS, got " + objects.size()
                         + " for object with DCIdentifier: '" + path + "'. Don't know where to add file.");
             }
             String fileObjectPid = objects.get(0);
@@ -120,7 +130,7 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
             Date dsAdded = new Date();
             log.trace("It took {} ms to add external datastream to doms for path '{}'", dsAdded.getTime() - objFound.getTime(), path);
             enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
-                    job.getChecksum(), true, "Adding file after bitrepository ingest");
+                    job.getChecksum(), true, "Adding checksum after bitrepository ingest");
             Date finished = new Date();
             log.trace("It took {} ms to add relation in doms for path '{}'", finished.getTime() - dsAdded.getTime(), path);
             log.trace("In total it took {} ms to register file in doms for path '{}'", finished.getTime() - start.getTime(), path);
