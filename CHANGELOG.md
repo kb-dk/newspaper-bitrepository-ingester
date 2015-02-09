@@ -1,3 +1,6 @@
+### 1.9
+* Fixed the bug that caused the component to hang upon certain errors from the bitrepository client
+
 ### 1.8
 * Seperated the action of registering a file in doms from the put operations
 
