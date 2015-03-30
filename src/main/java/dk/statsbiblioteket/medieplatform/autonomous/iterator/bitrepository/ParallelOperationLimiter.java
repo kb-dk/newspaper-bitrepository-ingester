@@ -1,6 +1,5 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -14,11 +13,9 @@ import org.slf4j.LoggerFactory;
 public class ParallelOperationLimiter {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final BlockingQueue<PutJob> activeOperations;
-    private final int secondsToWaitForFinish;
 
-    public ParallelOperationLimiter(int limit, int timeToWaitForFinish) {
+    public ParallelOperationLimiter(int limit/*, int timeToWaitForFinish*/) {
         activeOperations = new LinkedBlockingQueue<>(limit);
-        this.secondsToWaitForFinish = timeToWaitForFinish;
     }
 
     /**
@@ -43,7 +40,7 @@ public class ParallelOperationLimiter {
         PutJob job = null;
         while(iter.hasNext()) {
             job = iter.next();
-            if(job.getFileID().equals(fileID)) {
+            if(job.getIngestableFile().getFileID().equals(fileID)) {
                 break;
             }
         }
@@ -61,19 +58,8 @@ public class ParallelOperationLimiter {
     void removeJob(PutJob job) {
         activeOperations.remove(job);
     }
-
-    public void waitForFinish() throws NotFinishedException {
-        int secondsWaiting = 0;
-        while (!activeOperations.isEmpty() && (secondsWaiting++ < secondsToWaitForFinish)) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                //No problem
-            }
-        }
-        // There's a theroretical chance/possiblity that activeOperations still may change here (both grow and shrink)
-        if (secondsWaiting > secondsToWaitForFinish) {
-            throw new NotFinishedException(activeOperations);
-        }
+    
+    public boolean isFinished() {
+        return activeOperations.isEmpty();
     }
 }

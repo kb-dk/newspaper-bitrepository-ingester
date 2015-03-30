@@ -42,7 +42,7 @@ public class BatchImageLocatorTest {
         when(treeIterator.next()).thenReturn(fileEvent);
         IngestableFile firstFile = locator.nextFile();
         assertEquals(firstFile.getFileID(), firstFileName);
-        assertEquals(firstFile.getUrl(), new URL(BATCH_DIR_URL + "/" + firstFileName));
+        assertEquals(firstFile.getLocalUrl(), new URL(BATCH_DIR_URL + "/" + firstFileName));
         assertEquals(firstFile.getChecksum().getChecksumValue(), getChecksum(DEFAULT_MD5_CHECKSUM).getChecksumValue());
         assertEquals(firstFile.getChecksum().getChecksumSpec(), getChecksum(DEFAULT_MD5_CHECKSUM).getChecksumSpec());
     }
@@ -58,7 +58,7 @@ public class BatchImageLocatorTest {
         IngestableFile firstFile = locator.nextFile();
         String expectedFileID = firstFileName.replace('/', '_');
         assertEquals(firstFile.getFileID(), expectedFileID);
-        assertEquals(firstFile.getUrl(), new URL(BATCH_DIR_URL + "/" + firstFileName));
+        assertEquals(firstFile.getLocalUrl(), new URL(BATCH_DIR_URL + "/" + firstFileName));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class BatchImageLocatorTest {
                 thenReturn(fileEvent);
         IngestableFile firstFile = locator.nextFile();
         assertEquals(firstFile.getFileID(), firstFileName);
-        assertEquals(firstFile.getUrl(), new URL(BATCH_DIR_URL + "/" + firstFileName));
+        assertEquals(firstFile.getLocalUrl(), new URL(BATCH_DIR_URL + "/" + firstFileName));
     }
 
     private ChecksumDataForFileTYPE getChecksum(String checksum) {

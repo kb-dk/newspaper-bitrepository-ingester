@@ -9,14 +9,14 @@ import org.bitrepository.bitrepositoryelements.ChecksumDataForFileTYPE;
  */
 public class IngestableFile {
     private final String FileID;
-    private final URL url;
+    private final URL localUrl;
     private final ChecksumDataForFileTYPE checksum;
     private final Long fileSize;
     private final String path;
 
-    public IngestableFile(String fileID, URL url, ChecksumDataForFileTYPE checksum, Long fileSize, String path) {
+    public IngestableFile(String fileID, URL localUrl, ChecksumDataForFileTYPE checksum, Long fileSize, String path) {
         FileID = fileID;
-        this.url = url;
+        this.localUrl = localUrl;
         this.checksum = checksum;
         this.fileSize = fileSize;
         this.path = path;
@@ -26,8 +26,8 @@ public class IngestableFile {
         return FileID;
     }
 
-    public URL getUrl() {
-        return url;
+    public URL getLocalUrl() {
+        return localUrl;
     }
 
     public ChecksumDataForFileTYPE getChecksum() {
@@ -46,7 +46,7 @@ public class IngestableFile {
     public String toString() {
         return "IngestableFile{" +
                 "FileID='" + FileID + '\'' +
-                ", url=" + url +
+                ", url=" + localUrl +
                 ", checksum=" + checksum +
                 ", fileSize=" + fileSize +
                 ", path=" + path +
@@ -82,10 +82,10 @@ public class IngestableFile {
                 return false;
         } else if (!path.equals(other.path))
             return false;
-        if (url == null) {
-            if (other.url != null)
+        if (localUrl == null) {
+            if (other.localUrl != null)
                 return false;
-        } else if (!url.equals(other.url))
+        } else if (!localUrl.equals(other.localUrl))
             return false;
         return true;
     }
@@ -100,7 +100,7 @@ public class IngestableFile {
         result = prime * result
                 + ((fileSize == null) ? 0 : fileSize.hashCode());
         result = prime * result + ((path == null) ? 0 : path.hashCode());
-        result = prime * result + ((url == null) ? 0 : url.hashCode());
+        result = prime * result + ((localUrl == null) ? 0 : localUrl.hashCode());
         return result;
     }
 }

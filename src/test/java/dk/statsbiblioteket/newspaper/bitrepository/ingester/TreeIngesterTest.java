@@ -1,40 +1,41 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertFalse;
+import static org.testng.AssertJUnit.assertTrue;
+
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngestableFile;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.NotFinishedException;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.ParallelOperationLimiter;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.PutJob;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
 
 import org.bitrepository.bitrepositoryelements.ChecksumDataForFileTYPE;
 import org.bitrepository.bitrepositoryelements.ChecksumSpecTYPE;
 import org.bitrepository.bitrepositoryelements.ChecksumType;
 import org.bitrepository.client.eventhandler.CompleteEvent;
 import org.bitrepository.client.eventhandler.EventHandler;
+import org.bitrepository.client.eventhandler.OperationFailedEvent;
 import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.common.utils.CalendarUtils;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.mockito.ArgumentCaptor;
-
-import static org.mockito.Mockito.timeout;
-
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
-import static org.testng.Assert.assertFalse;
-import static org.testng.AssertJUnit.assertTrue;
+import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngestableFile;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.ParallelOperationLimiter;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
 
 public class TreeIngesterTest {
     public final static String TEST_COLLECTION_ID = "testCollection";
     protected static final int DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS = 10;
-    protected static final int DEFAULT_TIMEOUT = 60; /*60 seconds*/
     protected static final String DEFAULT_BASEURL = "http://bitfinder.statsbiblioteket.dk/avis/";
     private BatchImageLocator fileLocator;
     private PutFileClient putFileClient;
@@ -49,11 +50,11 @@ public class TreeIngesterTest {
         putFileClient = new PutFileClientStub();
         resultCollector = mock(ResultCollector.class);
         urlRegister = mock(DomsJP2FileUrlRegister.class);
-        operationLimiter = new ParallelOperationLimiter(DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS, DEFAULT_TIMEOUT);
+        operationLimiter = new ParallelOperationLimiter(DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS);
     }
 
     @Test
-    public void emptyTreeTest() throws NotFinishedException {
+    public void emptyTreeTest() throws InterruptedException {
     	treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         treeIngester.performIngest();
     }
@@ -63,7 +64,7 @@ public class TreeIngesterTest {
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 2;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
-        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts, DEFAULT_TIMEOUT);
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
         treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
@@ -85,10 +86,10 @@ public class TreeIngesterTest {
 
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
         verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
         verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(secondFile.getUrl()), eq(secondFile.getFileID()), eq(0L),
+                eq(TEST_COLLECTION_ID), eq(secondFile.getLocalUrl()), eq(secondFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
         verifyNoMoreInteractions(putFileClient);
 
@@ -96,14 +97,14 @@ public class TreeIngesterTest {
         firstFileComplete.setFileID(firstFile.getFileID());
         eventHandlerCaptor.getValue().handleEvent(firstFileComplete);
         verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(thirdFile.getUrl()), eq(thirdFile.getFileID()), eq(0L),
+                eq(TEST_COLLECTION_ID), eq(thirdFile.getLocalUrl()), eq(thirdFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
 
         CompleteEvent secondFileComplete = new CompleteEvent(TEST_COLLECTION_ID, null);
         secondFileComplete.setFileID(secondFile.getFileID());
         eventHandlerCaptor.getValue().handleEvent(secondFileComplete);
         verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(fourthFile.getUrl()), eq(fourthFile.getFileID()), eq(0L),
+                eq(TEST_COLLECTION_ID), eq(fourthFile.getLocalUrl()), eq(fourthFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), (EventHandler)anyObject(), (String) isNull());
     }
 
@@ -112,11 +113,10 @@ public class TreeIngesterTest {
      */
     @Test
     public void parallelPutCompletionTest() throws MalformedURLException, InterruptedException {
-        final int TIMEOUT_FOR_OPERATION = 10;
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
-        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts, TIMEOUT_FOR_OPERATION);
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
         treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         
         IngestableFile firstFile =
@@ -131,7 +131,7 @@ public class TreeIngesterTest {
 
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
         verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
         Thread.sleep(1000);
         assertFalse(runner.finished);
@@ -142,18 +142,20 @@ public class TreeIngesterTest {
         Thread.sleep(2000);
         assertTrue(runner.finished);
     }
-
+    
     /**
-     * Tests that the ingester correctly exists when the timeout expires.
+     * Tests that the ingester retries in the event that the putfile failes 
+     * @throws MalformedURLException 
+     * @throws InterruptedException 
      */
     @Test
-    public void parallelPutTimeoutTest() throws MalformedURLException, InterruptedException {
-        final int TIMEOUT_FOR_OPERATION = 1;
+    public void PutFileFailureRetryTest() throws MalformedURLException, InterruptedException {
         putFileClient = mock(PutFileClient.class);
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
-        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts, TIMEOUT_FOR_OPERATION);
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
         treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
                         "path:First-file");
@@ -163,16 +165,86 @@ public class TreeIngesterTest {
         TreeIngestRunner runner = new TreeIngestRunner();
         Thread t = new Thread(runner);
         t.start();
-
+        
         ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
         verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
                 eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
-        Thread.sleep(500);
+        Thread.sleep(1000);
         assertFalse(runner.finished);
+
+        OperationFailedEvent failureEvent = new OperationFailedEvent(TEST_COLLECTION_ID, null, null);
+        failureEvent.setFileID(firstFile.getFileID());
+        eventHandlerCaptor.getValue().handleEvent(failureEvent);
+
+        assertFalse(runner.finished);
+
+        verify(putFileClient, timeout(3000).times(1)).putFile(
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
+        Thread.sleep(1000);
+        
+        CompleteEvent successEvent = new CompleteEvent(TEST_COLLECTION_ID, null);
+        successEvent.setFileID(firstFile.getFileID());
+        eventHandlerCaptor.getValue().handleEvent(successEvent);
         Thread.sleep(2000);
         assertTrue(runner.finished);
-        verify(resultCollector).addFailure(anyString(), anyString(), anyString(), anyString());
+    }
+    
+    /**
+     * Tests that the ingester fails a putfile after a number of retries 
+     * @throws InterruptedException 
+     * @throws MalformedURLException 
+     */
+    @Test
+    public void PutFileTooManyRetriesTest() throws InterruptedException, MalformedURLException {
+        putFileClient = mock(PutFileClient.class);
+        int maxNumberOfParallelPuts = 1;
+        ChecksumDataForFileTYPE checksum = getChecksum("aa");
+        operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        
+        IngestableFile firstFile =
+                new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
+                        "path:First-file");
+        when(fileLocator.nextFile()).thenReturn(firstFile).thenReturn(null);
+
+        //We need to run the ingest in a separate thread, as it will block.
+        TreeIngestRunner runner = new TreeIngestRunner();
+        Thread t = new Thread(runner);
+        t.start();
+        
+        OperationFailedEvent failureEvent = new OperationFailedEvent(TEST_COLLECTION_ID, null, null);
+        failureEvent.setFileID(firstFile.getFileID());
+        
+        ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
+        verify(putFileClient, timeout(3000).times(1)).putFile(
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
+        Thread.sleep(1000);
+        assertFalse(runner.finished);
+        
+        eventHandlerCaptor.getValue().handleEvent(failureEvent);
+
+        verify(putFileClient, timeout(3000).times(1)).putFile(
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
+        Thread.sleep(1000);
+        assertFalse(runner.finished);
+        
+        eventHandlerCaptor.getValue().handleEvent(failureEvent);
+        
+        //The client is invoked 3 times, not sure why the above don't count..
+        verify(putFileClient, timeout(3000).times(3)).putFile(
+                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
+                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
+        Thread.sleep(1000);
+        assertFalse(runner.finished);
+        
+        eventHandlerCaptor.getValue().handleEvent(failureEvent);
+        
+        Thread.sleep(2000);
+        assertTrue(runner.finished);
     }
 
     private ChecksumDataForFileTYPE getChecksum(String checksum) {
@@ -189,13 +261,11 @@ public class TreeIngesterTest {
         boolean finished = false;
 
         public void run() {
-            try {
-				treeIngester.performIngest();
-			} catch (NotFinishedException e) {
-				for(PutJob job : e.getUnfinishedJobs()) {
-					resultCollector.addFailure(job.getFileID(), "exception", "testcase", "failed to ingest");
-				}
-			}
+			try {
+                treeIngester.performIngest();
+            } catch (InterruptedException e) {
+                // Err, not sure if we want to do anything?
+            }
             finished = true;
         }
     }

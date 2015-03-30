@@ -3,8 +3,6 @@ package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
@@ -18,9 +16,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngesterConfiguration;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.NotFinishedException;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.ParallelOperationLimiter;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.PutJob;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeIngester;
 
 import org.bitrepository.common.settings.Settings;
@@ -67,33 +63,25 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                     "Failed to force batch online. Skipping ingest of batch");
             return;
         }
-        int maxOperationTime = (int) (settings.getRepositorySettings().getClientSettings().getOperationTimeout().longValue()/1000); 
-        ParallelOperationLimiter parallelOperationLimiter = new ParallelOperationLimiter(
-                                                                                                configuration.getMaxNumberOfParallelPuts(), maxOperationTime);
-
+        
+        ParallelOperationLimiter parallelOperationLimiter = new ParallelOperationLimiter(configuration.getMaxNumberOfParallelPuts());
         PutFileClient ingestClient = createPutFileClient(configuration, settings);
-        try (DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(batch, createEnhancedFedora(configuration),
-                                                                                    configuration.getBitmagBaseUrl(), resultCollector, configuration.getMaxThreads(),
-                                                                                    configuration.getDomsTimeout())){
-            try (TreeIngester ingester = new TreeIngester(configuration.getCollectionID(),
-                                                                 parallelOperationLimiter,
-                                                                 urlRegister,
-                                                                 new BatchImageLocator(createIterator(batch), configuration.getUrlToBatchDir()),
-                                                                 ingestClient,
-                                                                 resultCollector)) {
-                log.info("Starting ingest of batch '" + batch.getFullID() + "'");
-                ingester.performIngest();
-            } catch (NotFinishedException e) {
-                Collection<PutJob> unfinishedJobs = e.getUnfinishedJobs();
-                String message = "Timeout(" + maxOperationTime + "s) waiting for last files (" + Arrays.toString(unfinishedJobs.toArray()) + ") to complete.";
-                log.warn(message);
-                for (PutJob job : unfinishedJobs) {
-                    resultCollector.addFailure(job.getFileID(),
-                                                      "ingest",
-                                                      getClass().getSimpleName(),
-                                                      "Timeout waiting for last files to be ingested.");
-                }
-            }
+
+        try (DomsJP2FileUrlRegister urlRegister = new DomsJP2FileUrlRegister(batch, 
+                                                                            createEnhancedFedora(configuration), 
+                                                                            configuration.getBitmagBaseUrl(), 
+                                                                            resultCollector, 
+                                                                            configuration.getMaxThreads(), 
+                                                                            configuration.getDomsTimeout());
+             TreeIngester ingester = new TreeIngester(configuration.getCollectionID(), 
+                                                     parallelOperationLimiter,
+                                                     urlRegister, 
+                                                     new BatchImageLocator(createIterator(batch), configuration.getUrlToBatchDir()), 
+                                                     ingestClient, 
+                                                     resultCollector)) {
+      
+            log.info("Starting ingest of batch '" + batch.getFullID() + "'");
+            ingester.performIngest();
         }
 
         log.info("Finished ingest of batch '" + batch.getFullID() + "'");

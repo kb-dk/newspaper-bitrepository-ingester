@@ -1,9 +1,13 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import javax.jms.JMSException;
 
 import org.bitrepository.client.eventhandler.EventHandler;
-import org.bitrepository.common.utils.Base16Utils;
 import org.bitrepository.modify.putfile.PutFileClient;
 import org.bitrepository.protocol.messagebus.MessageBus;
 import org.bitrepository.protocol.messagebus.MessageBusManager;
@@ -16,14 +20,17 @@ import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegist
 /**
  * Class handling ingest of a set of files in a tree iterator structure.
  */
-public class TreeIngester implements AutoCloseable{
+public class TreeIngester implements AutoCloseable {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private static final long DEFAULT_FILE_SIZE = 0;
+    private static final long ALLOWED_PUT_ATTEMPTS = 3;
     private final IngestableFileLocator fileLocator;
     private final String collectionID;
     private final EventHandler handler;
     private final ParallelOperationLimiter parallelOperationLimiter;
+    private final BlockingQueue<PutJob> failedJobsQueue = new LinkedBlockingQueue<>();
     private final PutFileClient putFileClient;
+    private final ResultCollector resultCollector;
 
     /**
      *
@@ -40,18 +47,20 @@ public class TreeIngester implements AutoCloseable{
         this.collectionID = collectionID;
         this.fileLocator = fileLocator;
         this.parallelOperationLimiter = operationLimiter;
-        handler = new PutFileEventHandler(parallelOperationLimiter, domsRegistor, resultCollector);
+        this.resultCollector = resultCollector;
+        handler = new PutFileEventHandler(parallelOperationLimiter, failedJobsQueue, domsRegistor);
         this.putFileClient = putFileClient;
     }
 
-    public void performIngest() throws NotFinishedException {
+    public void performIngest() throws InterruptedException {
         IngestableFile file = null;
         do {
             try {
                 file = fileLocator.nextFile();
                 try {
                     if (file != null) {
-                        putFile(file);
+                        PutJob job = new PutJob(file);
+                        putFile(job);
                     }
                 } catch (Exception e) {
                     log.error("Failed to ingest file.", e);
@@ -61,21 +70,48 @@ public class TreeIngester implements AutoCloseable{
             }
         }  while (file != null);
 
-        parallelOperationLimiter.waitForFinish();
-
+        while(!finished()) {
+            retryPuts();
+            Thread.sleep(1000);
+        }
+    }
+    
+    /**
+     * Retry PutJobs that have been registered for retry. 
+     * Only retry jobs for which less than the allowed attempts have been done 
+     * Reports jobs that have been retried too many times
+     */
+    private void retryPuts() {
+        Set<PutJob> jobs = new HashSet<>();
+        failedJobsQueue.drainTo(jobs);
+        for(PutJob job : jobs) {
+            if(job.getPutAttempts() < ALLOWED_PUT_ATTEMPTS) {
+                putFile(job);
+            } else {
+                resultCollector.addFailure(job.getIngestableFile().getFileID(), "jp2file", 
+                        getClass().getSimpleName(), job.getResultMessages().toString());
+            }
+        }
+    }
+    
+    /**
+     * Method to determine if we're done putting files. 
+     */
+    private boolean finished() {
+        boolean finished = false;
+        finished = (failedJobsQueue.isEmpty() && parallelOperationLimiter.isFinished());
+        return finished;
     }
 
     /**
      * Calls the concrete putFileClient blocking if the maxNumberOfParallelPut are exceeded.
      */
-    private void putFile(IngestableFile ingestableFile) {
-        PutJob job = new PutJob(ingestableFile.getFileID(), 
-                Base16Utils.decodeBase16(ingestableFile.getChecksum().getChecksumValue()),
-                ingestableFile.getPath());
+    private void putFile(PutJob job) {
         parallelOperationLimiter.addJob(job);
+        job.incrementPutAttempts();
         putFileClient.putFile(collectionID,
-                ingestableFile.getUrl(), ingestableFile.getFileID(), DEFAULT_FILE_SIZE,
-                ingestableFile.getChecksum(), null, handler, null);
+                job.getIngestableFile().getLocalUrl(), job.getIngestableFile().getFileID(), DEFAULT_FILE_SIZE,
+                job.getIngestableFile().getChecksum(), null, handler, null);
     }
 
     @Override

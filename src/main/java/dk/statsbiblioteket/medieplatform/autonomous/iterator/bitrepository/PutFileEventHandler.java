@@ -2,6 +2,7 @@ package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 
 import org.bitrepository.client.eventhandler.ContributorEvent;
 import org.bitrepository.client.eventhandler.EventHandler;
@@ -10,7 +11,6 @@ import org.bitrepository.client.eventhandler.OperationFailedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegister;
 
 public class PutFileEventHandler implements EventHandler {
@@ -18,12 +18,13 @@ public class PutFileEventHandler implements EventHandler {
 
     private final ParallelOperationLimiter operationLimiter;
     private final DomsJP2FileUrlRegister domsRegister;
-    private final ResultCollector resultCollector;
+    private final BlockingQueue<PutJob> failedJobs;
     
-    public PutFileEventHandler(ParallelOperationLimiter putLimiter, DomsJP2FileUrlRegister domsRegister, ResultCollector resultCollector) {
+    public PutFileEventHandler(ParallelOperationLimiter putLimiter, BlockingQueue<PutJob> failedJobsQueue, 
+            DomsJP2FileUrlRegister domsRegister) {
     	this.operationLimiter = putLimiter;
         this.domsRegister = domsRegister;
-        this.resultCollector = resultCollector;
+        this.failedJobs = failedJobsQueue;
     }
 
     @Override
@@ -53,7 +54,8 @@ public class PutFileEventHandler implements EventHandler {
                 }
                 String failureDetails = "Failed conversation '" + event.getConversationID() 
                         + "' with reason: '" + event.getInfo() + "' for components: " +components;
-                resultCollector.addFailure(event.getFileID(), "jp2file", getClass().getSimpleName(), failureDetails);
+                job.addResultMessage(failureDetails);
+                failedJobs.add(job);
                 operationLimiter.removeJob(job);
             }
         }

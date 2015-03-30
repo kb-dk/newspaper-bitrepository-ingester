@@ -9,6 +9,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
+
+import org.bitrepository.common.utils.Base16Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,12 +106,12 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
             try {
                 register();
             } catch (DomsObjectNotFoundException e) {
-                log.error("Failed to find the proper object in DOMS for '"+job.getPath()+"'", e);
-                resultCollector.addFailure(job.getFileID(), "exception", getClass().getSimpleName(),
+                log.error("Failed to find the proper object in DOMS for '"+job.getIngestableFile().getPath()+"'", e);
+                resultCollector.addFailure(job.getIngestableFile().getFileID(), "exception", getClass().getSimpleName(),
                         "Could not find the proper DOMS object to register the ingested file to: " + e.toString());
             } catch (Exception e) {
-                log.error("Failed to register the url for '"+job.getPath()+"' in DOMS", e);
-                resultCollector.addFailure(job.getFileID(),
+                log.error("Failed to register the url for '"+job.getIngestableFile().getPath()+"' in DOMS", e);
+                resultCollector.addFailure(job.getIngestableFile().getFileID(),
                                                   "exception",
                                                   getClass().getSimpleName(),
                                                   "Failed to update DOMS object with the ingested file: " + e.toString());
@@ -120,7 +122,7 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
                 BackendInvalidResourceException {
             List<String> objects;
             Date start = new Date();
-            String path = job.getPath();
+            String path = job.getIngestableFile().getPath();
             objects = enhancedFedora.findObjectFromDCIdentifier(path);
             Date objFound = new Date();
             log.trace("It took {} ms to find object in doms for path '{}'", objFound.getTime() - start.getTime(), path);
@@ -129,13 +131,14 @@ public class DomsJP2FileUrlRegister implements AutoCloseable {
                         + " for object with DCIdentifier: '" + path + "'. Don't know where to add file.");
             }
             String fileObjectPid = objects.get(0);
-            String url = baseUrl + job.getFileID();
-            enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, job.getFileID(), url, "application/octet-stream", 
+            String url = baseUrl + job.getIngestableFile().getFileID();
+            enhancedFedora.addExternalDatastream(fileObjectPid, CONTENTS, job.getIngestableFile().getFileID(), url, "application/octet-stream", 
                     JP2_MIMETYPE, null, "Adding file after bitrepository ingest");
             Date dsAdded = new Date();
             log.trace("It took {} ms to add external datastream to doms for path '{}'", dsAdded.getTime() - objFound.getTime(), path);
+            String checksum = Base16Utils.decodeBase16(job.getIngestableFile().getChecksum().getChecksumValue());
             enhancedFedora.addRelation(fileObjectPid, "info:fedora/" + fileObjectPid + "/" + CONTENTS, RELATION_PREDICATE,
-                    job.getChecksum(), true, "Adding checksum after bitrepository ingest");
+                    checksum, true, "Adding checksum after bitrepository ingest");
             Date finished = new Date();
             log.trace("It took {} ms to add relation in doms for path '{}'", finished.getTime() - dsAdded.getTime(), path);
             log.trace("In total it took {} ms to register file in doms for path '{}'", finished.getTime() - start.getTime(), path);
