@@ -87,7 +87,9 @@ public class TreeIngester implements AutoCloseable {
         for(PutJob job : jobs) {
             if(job.getPutAttempts() < ALLOWED_PUT_ATTEMPTS) {
                 putFile(job);
+                log.info("Retrying file '{}' (attempt #{})", job.getIngestableFile().getFileID(), job.getPutAttempts());
             } else {
+                log.info("Failing file '{}' after {} attempts", job.getIngestableFile().getFileID(), job.getPutAttempts());
                 resultCollector.addFailure(job.getIngestableFile().getFileID(), "jp2file", 
                         getClass().getSimpleName(), job.getResultMessages().toString());
             }
