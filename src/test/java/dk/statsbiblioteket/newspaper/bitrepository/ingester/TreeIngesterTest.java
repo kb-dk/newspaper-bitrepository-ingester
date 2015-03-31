@@ -35,6 +35,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.TreeI
 public class TreeIngesterTest {
     public final static String TEST_COLLECTION_ID = "testCollection";
     protected static final int DEFAULT_MAX_NUMBER_OF_PARALLEL_PUTS = 10;
+    protected static final int DEFAULT_MAX_RETRIES = 3;
     protected static final String DEFAULT_BASEURL = "http://bitfinder.statsbiblioteket.dk/avis/";
     private BatchImageLocator fileLocator;
     private PutFileClient putFileClient;
@@ -54,7 +55,7 @@ public class TreeIngesterTest {
 
     @Test
     public void emptyTreeTest() throws InterruptedException {
-    	treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+    	treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_RETRIES);
         treeIngester.performIngest();
     }
 
@@ -64,7 +65,7 @@ public class TreeIngesterTest {
         int maxNumberOfParallelPuts = 2;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
         operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
-        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_RETRIES);
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
                         "path:First-file");
@@ -116,7 +117,7 @@ public class TreeIngesterTest {
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
         operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
-        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_RETRIES);
         
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
@@ -153,7 +154,7 @@ public class TreeIngesterTest {
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
         operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
-        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_RETRIES);
         
         IngestableFile firstFile =
                 new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
@@ -201,7 +202,7 @@ public class TreeIngesterTest {
         int maxNumberOfParallelPuts = 1;
         ChecksumDataForFileTYPE checksum = getChecksum("aa");
         operationLimiter = new ParallelOperationLimiter(maxNumberOfParallelPuts);
-        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
+        treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector, DEFAULT_MAX_RETRIES);
         
         IngestableFile firstFile =
                 new IngestableFile("retry-failure-file", new URL("http://somewhere.someplace/retry-failure-file"), checksum, 0L,
@@ -227,7 +228,7 @@ public class TreeIngesterTest {
             eventHandlerCaptor.getValue().handleEvent(failureEvent);
         }
         
-        Thread.sleep(2000);
+        Thread.sleep(3000);
         assertTrue(runner.finished);
     }
 

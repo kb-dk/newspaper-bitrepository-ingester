@@ -78,7 +78,8 @@ public class BitrepositoryIngesterComponent extends TreeProcessorAbstractRunnabl
                                                      urlRegister, 
                                                      new BatchImageLocator(createIterator(batch), configuration.getUrlToBatchDir()), 
                                                      ingestClient, 
-                                                     resultCollector)) {
+                                                     resultCollector,
+                                                     configuration.getMaxBitmagRetries())) {
       
             log.info("Starting ingest of batch '" + batch.getFullID() + "'");
             ingester.performIngest();

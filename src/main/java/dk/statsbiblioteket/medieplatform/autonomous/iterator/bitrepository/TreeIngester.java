@@ -23,7 +23,6 @@ import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegist
 public class TreeIngester implements AutoCloseable {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private static final long DEFAULT_FILE_SIZE = 0;
-    private static final long ALLOWED_PUT_ATTEMPTS = 3;
     private final IngestableFileLocator fileLocator;
     private final String collectionID;
     private final EventHandler handler;
@@ -31,6 +30,7 @@ public class TreeIngester implements AutoCloseable {
     private final BlockingQueue<PutJob> failedJobsQueue = new LinkedBlockingQueue<>();
     private final PutFileClient putFileClient;
     private final ResultCollector resultCollector;
+    private final int maxRetries;
 
     /**
      *
@@ -43,13 +43,14 @@ public class TreeIngester implements AutoCloseable {
      * @param maxNumberOfParallelPuts The number of puts to to perform in parallel.
      */
     public TreeIngester(String collectionID, ParallelOperationLimiter operationLimiter, DomsJP2FileUrlRegister domsRegistor, 
-            IngestableFileLocator fileLocator, PutFileClient putFileClient, ResultCollector resultCollector) {
+            IngestableFileLocator fileLocator, PutFileClient putFileClient, ResultCollector resultCollector, int maxRetries) {
         this.collectionID = collectionID;
         this.fileLocator = fileLocator;
         this.parallelOperationLimiter = operationLimiter;
         this.resultCollector = resultCollector;
         handler = new PutFileEventHandler(parallelOperationLimiter, failedJobsQueue, domsRegistor);
         this.putFileClient = putFileClient;
+        this.maxRetries = maxRetries;
     }
 
     public void performIngest() throws InterruptedException {
@@ -85,7 +86,7 @@ public class TreeIngester implements AutoCloseable {
         Set<PutJob> jobs = new HashSet<>();
         failedJobsQueue.drainTo(jobs);
         for(PutJob job : jobs) {
-            if(job.getPutAttempts() < ALLOWED_PUT_ATTEMPTS) {
+            if(job.getPutAttempts() < maxRetries) {
                 putFile(job);
                 log.info("Retrying file '{}' (attempt #{})", job.getIngestableFile().getFileID(), job.getPutAttempts());
             } else {

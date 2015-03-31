@@ -14,6 +14,7 @@ public class IngesterConfiguration {
     public static final String BITMAG_BASEURL_PROPERTY = "bitrepository.ingester.baseurl";
     public static final String FORCE_ONLINE_COMMAND = "bitrepository.ingester.forceOnlineCommand";
     public static final String DOMS_TIMEOUT = "bitrepository.ingester.domsTimeout";
+    public static final String MAX_BITMAG_PUT_RETRIES = "bitrepository.ingester.maxPutRetries";
     
     private final String componentID;
     private final String collectionID;
@@ -31,6 +32,7 @@ public class IngesterConfiguration {
     private final int maxThreads;
     private final String urlToBatchDir;
     private final long domsTimeout;
+    private final int maxBitmagRetries;
 
     public IngesterConfiguration(Properties properties) {
         componentID = properties.getProperty(COMPONENTID_PROPERTY);
@@ -49,6 +51,7 @@ public class IngesterConfiguration {
         maxThreads = Integer.parseInt(properties.getProperty(ConfigConstants.THREADS_PER_BATCH, "1"));
         urlToBatchDir = properties.getProperty(URL_TO_BATCH_DIR_PROPERTY);
         domsTimeout = Long.parseLong(properties.getProperty(DOMS_TIMEOUT, "3600000"));
+        maxBitmagRetries = Integer.parseInt(properties.getProperty(MAX_BITMAG_PUT_RETRIES, "3"));
     }
 
     public String getComponentID() {
@@ -115,5 +118,7 @@ public class IngesterConfiguration {
         return domsTimeout;
     }
 
-
+    public int getMaxBitmagRetries() {
+        return maxBitmagRetries;
+    }
 }
