@@ -1,7 +1,6 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -205,8 +204,8 @@ public class TreeIngesterTest {
         treeIngester = new TreeIngester(TEST_COLLECTION_ID, operationLimiter, urlRegister, fileLocator, putFileClient, resultCollector);
         
         IngestableFile firstFile =
-                new IngestableFile("First-file", new URL("http://somewhere.someplace/first-file"), checksum, 0L,
-                        "path:First-file");
+                new IngestableFile("retry-failure-file", new URL("http://somewhere.someplace/retry-failure-file"), checksum, 0L,
+                        "path:retry-failure-file");
         when(fileLocator.nextFile()).thenReturn(firstFile).thenReturn(null);
 
         //We need to run the ingest in a separate thread, as it will block.
@@ -216,32 +215,17 @@ public class TreeIngesterTest {
         
         OperationFailedEvent failureEvent = new OperationFailedEvent(TEST_COLLECTION_ID, null, null);
         failureEvent.setFileID(firstFile.getFileID());
-        
-        ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
-        verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
-                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
-        Thread.sleep(1000);
-        assertFalse(runner.finished);
-        
-        eventHandlerCaptor.getValue().handleEvent(failureEvent);
 
-        verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
-                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
-        Thread.sleep(1000);
-        assertFalse(runner.finished);
-        
-        eventHandlerCaptor.getValue().handleEvent(failureEvent);
-        
-        //The client is invoked 3 times, not sure why the above don't count..
-        verify(putFileClient, timeout(3000).times(3)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
-                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
-        Thread.sleep(1000);
-        assertFalse(runner.finished);
-        
-        eventHandlerCaptor.getValue().handleEvent(failureEvent);
+        ArgumentCaptor<EventHandler> eventHandlerCaptor = ArgumentCaptor.forClass(EventHandler.class);
+        for(int i = 1; i<=3; i++) {
+            verify(putFileClient, timeout(3000).times(i)).putFile(
+                    eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
+                    eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
+            Thread.sleep(1000);
+            assertFalse(runner.finished);
+            
+            eventHandlerCaptor.getValue().handleEvent(failureEvent);
+        }
         
         Thread.sleep(2000);
         assertTrue(runner.finished);
