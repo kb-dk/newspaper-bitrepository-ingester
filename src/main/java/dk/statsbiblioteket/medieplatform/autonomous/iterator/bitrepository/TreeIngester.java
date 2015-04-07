@@ -23,6 +23,7 @@ import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegist
 public class TreeIngester implements AutoCloseable {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private static final long DEFAULT_FILE_SIZE = 0;
+    private static final int SLEEP_PERIOD = 1000; /* One second in ms */
     private final IngestableFileLocator fileLocator;
     private final String collectionID;
     private final EventHandler handler;
@@ -73,7 +74,7 @@ public class TreeIngester implements AutoCloseable {
 
         while(!finished()) {
             retryPuts();
-            Thread.sleep(1000);
+            Thread.sleep(SLEEP_PERIOD);
         }
     }
     
@@ -102,7 +103,7 @@ public class TreeIngester implements AutoCloseable {
      */
     private boolean finished() {
         boolean finished = false;
-        finished = (failedJobsQueue.isEmpty() && parallelOperationLimiter.isFinished());
+        finished = (failedJobsQueue.isEmpty() && parallelOperationLimiter.isEmpty());
         return finished;
     }
 

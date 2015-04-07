@@ -8,13 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class for holding jobs 
+ * Class for holding running putjobs jobs
+ * Makes it possible to limit the number of asynchronous jobs and share job objects between different threads
  */
 public class ParallelOperationLimiter {
     private final Logger log = LoggerFactory.getLogger(getClass());
     private final BlockingQueue<PutJob> activeOperations;
 
-    public ParallelOperationLimiter(int limit/*, int timeToWaitForFinish*/) {
+    public ParallelOperationLimiter(int limit) {
         activeOperations = new LinkedBlockingQueue<>(limit);
     }
 
@@ -59,7 +60,10 @@ public class ParallelOperationLimiter {
         activeOperations.remove(job);
     }
     
-    public boolean isFinished() {
+    /**
+     * Determine if there are no more jobs in the queue 
+     */
+    public boolean isEmpty() {
         return activeOperations.isEmpty();
     }
 }

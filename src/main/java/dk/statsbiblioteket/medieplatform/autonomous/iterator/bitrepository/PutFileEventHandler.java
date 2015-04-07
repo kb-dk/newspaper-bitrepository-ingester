@@ -45,9 +45,9 @@ public class PutFileEventHandler implements EventHandler {
                     OperationFailedEvent opEvent = (OperationFailedEvent) event;
                     List<ContributorEvent> events = opEvent.getComponentResults();
                     if(events != null) {
-                        for(ContributorEvent e : events) {
-                            if(e.getEventType().equals(OperationEvent.OperationEventType.COMPONENT_FAILED)) {
-                                components.add(e.getContributorID());
+                        for(ContributorEvent contributorEvent : events) {
+                            if(contributorEvent.getEventType().equals(OperationEvent.OperationEventType.COMPONENT_FAILED)) {
+                                components.add(contributorEvent.getContributorID());
                             }
                         }
                     }
