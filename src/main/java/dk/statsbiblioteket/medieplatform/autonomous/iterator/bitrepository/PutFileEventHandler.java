@@ -32,9 +32,11 @@ public class PutFileEventHandler implements EventHandler {
         if (event.getEventType().equals(OperationEvent.OperationEventType.COMPLETE)) {
             PutJob job = getJob(event);
             if(job != null) {
-                log.debug("Completed ingest of file " + event.getFileID());
+                log.info("Completed ingest of file " + event.getFileID());
                 domsRegister.registerJp2File(job);
                 operationLimiter.removeJob(job);
+            } else {
+                log.debug("Failed to find PutJob for file '{}' for event '{}'", event.getFileID(), event.getEventType());
             }
         } else if (event.getEventType().equals(OperationEvent.OperationEventType.FAILED)) {
             PutJob job = getJob(event);
@@ -57,7 +59,11 @@ public class PutFileEventHandler implements EventHandler {
                 job.addResultMessage(failureDetails);
                 failedJobs.add(job);
                 operationLimiter.removeJob(job);
+            } else {
+                log.debug("Failed to find PutJob for file '{}' for event '{}'", event.getFileID(), event.getEventType());
             }
+        } else {
+            log.debug("Got an event that I really don't care about, event type: '{}' for fileID '{}'", event.getEventType(), event.getFileID());
         }
     }
 

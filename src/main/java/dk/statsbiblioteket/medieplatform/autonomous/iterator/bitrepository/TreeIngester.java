@@ -57,18 +57,16 @@ public class TreeIngester implements AutoCloseable {
     public void performIngest() throws InterruptedException {
         IngestableFile file = null;
         do {
-            try {
-                file = fileLocator.nextFile();
+            file = fileLocator.nextFile();
+            if (file != null) {
                 try {
-                    if (file != null) {
-                        PutJob job = new PutJob(file);
-                        putFile(job);
-                    }
+                    PutJob job = new PutJob(file);
+                    putFile(job);
                 } catch (Exception e) {
                     log.error("Failed to ingest file.", e);
+                    resultCollector.addFailure(file.getPath(), "jp2file", getClass().getSimpleName(), 
+                            "Failed to ingest file. '" + e.toString() + "'");
                 }
-            } catch (Exception e) {
-                log.error("Failed to find file to ingest.", e);
             }
         }  while (file != null);
 
@@ -103,7 +101,7 @@ public class TreeIngester implements AutoCloseable {
      */
     private boolean finished() {
         boolean finished = false;
-        finished = (failedJobsQueue.isEmpty() && parallelOperationLimiter.isEmpty());
+        finished = (parallelOperationLimiter.isEmpty() && failedJobsQueue.isEmpty());
         return finished;
     }
 

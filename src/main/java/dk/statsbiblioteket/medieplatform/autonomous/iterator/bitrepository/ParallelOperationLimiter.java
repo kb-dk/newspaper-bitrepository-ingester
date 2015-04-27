@@ -1,8 +1,8 @@
 package dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository;
 
-import java.util.Iterator;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,22 +13,21 @@ import org.slf4j.LoggerFactory;
  */
 public class ParallelOperationLimiter {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    private final BlockingQueue<PutJob> activeOperations;
+    private Map<String, PutJob> jobs = new ConcurrentHashMap<>(); 
+    private Semaphore jobLimiter;
 
     public ParallelOperationLimiter(int limit) {
-        activeOperations = new LinkedBlockingQueue<>(limit);
+        jobLimiter = new Semaphore(limit);
     }
 
     /**
      * Will block until the if the activeOperations queue limit is exceeded and unblock when a job is removed.
      * @param job The job in the queue.
      */
-    void addJob(PutJob job) {
-        try {
-            activeOperations.put(job);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    public void addJob(PutJob job) {
+        jobLimiter.acquireUninterruptibly();
+        jobs.put(job.getIngestableFile().getFileID(), job);
+
     }
     
     /**
@@ -36,34 +35,25 @@ public class ParallelOperationLimiter {
      * @param fileID The fileID to get the job for
      * @return PutJob the PutJob with relevant info for the job. May return null if no job matching fileID is found
      */
-    PutJob getJob(String fileID) {
-        Iterator<PutJob> iter = activeOperations.iterator();
-        PutJob job = null;
-        while(iter.hasNext()) {
-            job = iter.next();
-            if(job.getIngestableFile().getFileID().equals(fileID)) {
-                break;
-            }
-        }
-        return job;
-    }
-    
-    PutJob getNextJob() throws InterruptedException {
-    	return activeOperations.take();
+    public PutJob getJob(String fileID) {
+        return jobs.get(fileID);
     }
 
     /**
      * Removes a job from the queue
      * @param job the PutJob to remove 
      */
-    void removeJob(PutJob job) {
-        activeOperations.remove(job);
+    public void removeJob(PutJob job) {
+        PutJob removedJob = jobs.remove(job.getIngestableFile().getFileID());
+        if(removedJob != null) {
+            jobLimiter.release();
+        }
     }
     
     /**
      * Determine if there are no more jobs in the queue 
      */
-    public boolean isEmpty() {
-        return activeOperations.isEmpty();
+     public boolean isEmpty() {
+        return jobs.isEmpty();
     }
 }
