@@ -1,4 +1,4 @@
-### 1.1
+### 1.11
 * Fix the 'fail random' bug, that caused missing (incomplete) ingest of files. 
 
 ### 1.10
