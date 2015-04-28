@@ -1,3 +1,6 @@
+### 1.1
+* Fix the 'fail random' bug, that caused missing (incomplete) ingest of files. 
+
 ### 1.10
 * Add auto-retry functionality, to avoid failed batches when Bitrepository Messages are lost
 * Update to version 2.7 of batch-event-framework
