@@ -63,7 +63,7 @@ public class TreeIngester implements AutoCloseable {
                     PutJob job = new PutJob(file);
                     putFile(job);
                 } catch (Exception e) {
-                    log.error("Failed to ingest file.", e);
+                    log.error("Failed to ingest file '{}'", file, e);
                     resultCollector.addFailure(file.getPath(), "jp2file", getClass().getSimpleName(), 
                             "Failed to ingest file. '" + e.toString() + "'");
                 }
@@ -101,6 +101,7 @@ public class TreeIngester implements AutoCloseable {
      */
     private boolean finished() {
         boolean finished = false;
+        /* Ye be warned, the sequence of the '&&' matters.*/
         finished = (parallelOperationLimiter.isEmpty() && failedJobsQueue.isEmpty());
         return finished;
     }

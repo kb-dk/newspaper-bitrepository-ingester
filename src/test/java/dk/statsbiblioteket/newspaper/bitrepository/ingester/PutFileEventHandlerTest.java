@@ -1,15 +1,12 @@
 package dk.statsbiblioteket.newspaper.bitrepository.ingester;
 
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
-import static org.testng.Assert.assertFalse;
-import static org.testng.AssertJUnit.assertTrue;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -17,6 +14,7 @@ import java.util.concurrent.BlockingQueue;
 
 import org.bitrepository.client.eventhandler.CompleteEvent;
 import org.bitrepository.client.eventhandler.OperationFailedEvent;
+import org.mockito.InOrder;
 import org.testng.annotations.Test;
 
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.bitrepository.IngestableFile;
@@ -48,9 +46,12 @@ public class PutFileEventHandlerTest {
         handler.handleEvent(failureEvent);
         handler.handleEvent(failureEvent);
         
-        verify(putLimiter, times(2)).getJob(TEST_FILE_ID);
-        verify(putLimiter, times(1)).removeJob(eq(theJob));
-        verify(failedJobsQueue, times(1)).add(eq(theJob));
+        InOrder order = inOrder(putLimiter, failedJobsQueue);
+        
+        order.verify(putLimiter, times(1)).getJob(TEST_FILE_ID);
+        order.verify(failedJobsQueue, times(1)).add(eq(theJob));
+        order.verify(putLimiter, times(1)).removeJob(eq(theJob));
+        order.verify(putLimiter, times(1)).getJob(TEST_FILE_ID);
         verifyNoMoreInteractions(putLimiter);
         verifyNoMoreInteractions(failedJobsQueue);
         verifyNoMoreInteractions(domsRegister);
@@ -74,9 +75,11 @@ public class PutFileEventHandlerTest {
         
         handler.handleEvent(completeEvent);
         
-        verify(putLimiter, times(1)).getJob(TEST_FILE_ID);
-        verify(putLimiter, times(1)).removeJob(eq(theJob));
-        verify(domsRegister).registerJp2File(eq(theJob));
+        InOrder order = inOrder(putLimiter, domsRegister);
+        
+        order.verify(putLimiter, times(1)).getJob(TEST_FILE_ID);
+        order.verify(domsRegister).registerJp2File(eq(theJob));
+        order.verify(putLimiter, times(1)).removeJob(eq(theJob));
         verifyNoMoreInteractions(putLimiter);
         verifyNoMoreInteractions(failedJobsQueue);
         verifyNoMoreInteractions(domsRegister);
