@@ -179,11 +179,12 @@ public class TreeIngesterTest {
 
         assertFalse(runner.finished);
 
-        verify(putFileClient, timeout(3000).times(1)).putFile(
-                eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()), eq(firstFile.getFileID()), eq(0L),
-                eq(checksum), (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(), (String) isNull());
-        Thread.sleep(1000);
-        
+        verify(putFileClient, timeout(3000).times(2)).putFile(eq(TEST_COLLECTION_ID), eq(firstFile.getLocalUrl()),
+                                                              eq(firstFile.getFileID()), eq(0L), eq(checksum),
+                                                              (ChecksumSpecTYPE) isNull(), eventHandlerCaptor.capture(),
+                                                              (String) isNull());
+        assertFalse(runner.finished);
+
         CompleteEvent successEvent = new CompleteEvent(TEST_COLLECTION_ID, null);
         successEvent.setFileID(firstFile.getFileID());
         eventHandlerCaptor.getValue().handleEvent(successEvent);
