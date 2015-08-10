@@ -96,7 +96,4 @@
    
     </plugins>
   </build>
-  <properties>
-    <batch-framework-version>2.5</batch-framework-version>
-  </properties>
 </project>
