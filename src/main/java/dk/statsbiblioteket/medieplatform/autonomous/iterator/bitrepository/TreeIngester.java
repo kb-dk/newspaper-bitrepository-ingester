@@ -57,18 +57,18 @@ public class TreeIngester implements AutoCloseable {
     public void performIngest() throws InterruptedException {
         IngestableFile file = null;
         do {
-            file = fileLocator.nextFile();
-            if (file != null) {
-                try {
-                    PutJob job = new PutJob(file);
-                    putFile(job);
-                } catch (Exception e) {
-                    log.error("Failed to ingest file '{}'", file, e);
-                    resultCollector.addFailure(file.getPath(), "jp2file", getClass().getSimpleName(), 
-                            "Failed to ingest file. '" + e.toString() + "'");
+            try {
+                file = fileLocator.nextFile();
+                if (file != null) {
+                        PutJob job = new PutJob(file);
+                        putFile(job);
                 }
+            } catch (Exception e) {
+                log.error("Failed to ingest file '{}'", file, e);
+                resultCollector.addFailure(file.getPath(), "jp2file", getClass().getSimpleName(), 
+                        "Failed to ingest file. '" + e.toString() + "'");
             }
-        }  while (file != null);
+        } while (file != null);
 
         while(!finished()) {
             retryPuts();
