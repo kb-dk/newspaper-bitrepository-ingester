@@ -14,8 +14,10 @@ import org.bitrepository.protocol.messagebus.MessageBusManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.newspaper.bitrepository.ingester.DomsJP2FileUrlRegister;
+import dk.statsbiblioteket.util.Strings;
 
 /**
  * Class handling ingest of a set of files in a tree iterator structure.
@@ -32,6 +34,7 @@ public class TreeIngester implements AutoCloseable {
     private final PutFileClient putFileClient;
     private final ResultCollector resultCollector;
     private final int maxRetries;
+    private final Batch batch;
 
     /**
      *
@@ -44,7 +47,7 @@ public class TreeIngester implements AutoCloseable {
      * @param maxNumberOfParallelPuts The number of puts to to perform in parallel.
      */
     public TreeIngester(String collectionID, ParallelOperationLimiter operationLimiter, DomsJP2FileUrlRegister domsRegistor, 
-            IngestableFileLocator fileLocator, PutFileClient putFileClient, ResultCollector resultCollector, int maxRetries) {
+            IngestableFileLocator fileLocator, PutFileClient putFileClient, ResultCollector resultCollector, int maxRetries, Batch batch) {
         this.collectionID = collectionID;
         this.fileLocator = fileLocator;
         this.parallelOperationLimiter = operationLimiter;
@@ -52,24 +55,31 @@ public class TreeIngester implements AutoCloseable {
         handler = new PutFileEventHandler(parallelOperationLimiter, failedJobsQueue, domsRegistor);
         this.putFileClient = putFileClient;
         this.maxRetries = maxRetries;
+        this.batch = batch;
     }
 
     public void performIngest() throws InterruptedException {
         IngestableFile file = null;
-        do {
-            try {
+        try {
+            do {
                 file = fileLocator.nextFile();
-                if (file != null) {
-                        PutJob job = new PutJob(file);
-                        putFile(job);
+                try {
+                    if (file != null) {
+                            PutJob job = new PutJob(file);
+                            putFile(job);
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to ingest file '{}'", file, e);
+                    resultCollector.addFailure(file.getPath(), "jp2file", getClass().getSimpleName(), 
+                            "Failed to ingest file. '" + e.toString() + "'");
+                    
                 }
-            } catch (Exception e) {
-                log.error("Failed to ingest file '{}'", file, e);
-                resultCollector.addFailure(file.getPath(), "jp2file", getClass().getSimpleName(), 
-                        "Failed to ingest file. '" + e.toString() + "'");
-            }
-        } while (file != null);
-
+            } while (file != null);
+        } catch (Exception e ) {
+            log.error("Failure while ingesting files", e);
+            resultCollector.addFailure(batch.getFullID(), "exception", e.getClass().getSimpleName(), 
+                    "Exception during ingest: " + e.toString(), Strings.getStackTrace(e));
+        }
         while(!finished()) {
             retryPuts();
             Thread.sleep(SLEEP_PERIOD);
